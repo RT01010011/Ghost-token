@@ -1,0 +1,27 @@
+node_modules/
+.env
+.env.*
+!.env.example
+cache-ghost-token/
+artifacts-ghost-token/
+deployed-addresses-ghost-token.json
+deployed-addresses-ghost-ecosystem.json
+dist-ts/
+typechain-types/
+*.log
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+*.pem
+.env.local
+.env.backup
+
+# Couverture / audits locaux
+coverage/
+coverage.json
+audit/

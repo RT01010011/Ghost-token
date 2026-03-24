@@ -1,0 +1,23 @@
+{
+  "name": "depot-ghost-tokken",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dépot ghost tokken — jeton GHOST et prévente (Hardhat, Base)",
+  "scripts": {
+    "compile:token": "hardhat compile --config hardhat-ghost-token.config.ts",
+    "estimate:deploy:gas": "hardhat run scripts/estimate-ghost-deploy-gas.ts --config hardhat-ghost-token.config.ts",
+    "deploy:token:base": "hardhat run scripts/deploy-ghost-token.ts --config hardhat-ghost-token.config.ts --network base",
+    "deploy:token:baseSepolia": "hardhat run scripts/deploy-ghost-token.ts --config hardhat-ghost-token.config.ts --network baseSepolia",
+    "deploy:ecosystem:base": "hardhat run scripts/deploy-ghost-ecosystem.ts --config hardhat-ghost-token.config.ts --network base",
+    "deploy:ecosystem:baseSepolia": "hardhat run scripts/deploy-ghost-ecosystem.ts --config hardhat-ghost-token.config.ts --network baseSepolia"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@openzeppelin/contracts": "^5.0.1",
+    "@types/node": "^20.11.0",
+    "dotenv": "^16.3.1",
+    "hardhat": "^2.19.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
