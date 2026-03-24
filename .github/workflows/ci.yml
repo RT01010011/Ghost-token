@@ -17,3 +17,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run compile:token
+      - run: npm run test:token
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192

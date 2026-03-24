@@ -18,12 +18,19 @@ dépôt tokken/
 │   ├── deploy-ghost-token.ts      # Déploiement GhostToken seul + vérif optionnelle
 │   └── estimate-ghost-deploy-gas.ts # Estimation gas en réseau Hardhat local
 ├── tests/
-│   └── .gitkeep                   # Dossier réservé aux tests (vide dans ce dépôt)
+│   ├── README.md                  # Suite Hardhat (183 scénarios)
+│   ├── helpers/                   # presaleBonus (aligné registre bonus)
+│   └── *.test.ts                  # Token, prévente, sécurité, cohérence Schnorr
+├── audits/
+│   └── README.md                  # Statut audits externes & transparence
+├── CONTRIBUTING.md
+├── .gitattributes                 # Fin de ligne (LF) pour Solidity / TS
 └── contrat tokken/
     ├── README.md                  # Contrats : ordre de déploiement et API
     ├── *.sol                      # Contrats de production
     └── mocks/
-        └── MockGhostProtocolV2ForPresale.sol  # Utilisé uniquement par estimate-ghost-deploy-gas (local)
+        ├── MockGhostProtocolV2ForPresale.sol  # Tests + estimate gas (local)
+        └── ReentrantRefundAttacker.sol        # Test réentrance refund (local)
 ```
 
 Générés localement (ne pas committer) : `node_modules/`, `cache-ghost-token/`, `artifacts-ghost-token/`, `typechain-types/`, `.env`, `deployed-addresses-*.json`.
@@ -40,6 +47,7 @@ Obligatoires pour `deploy:ecosystem:base` sur **Base mainnet / Sepolia** : `PRIV
 ```bash
 npm install
 npm run compile:token
+npm run test:token
 npm run estimate:deploy:gas
 npm run deploy:ecosystem:base
 ```

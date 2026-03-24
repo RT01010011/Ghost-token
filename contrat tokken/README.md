@@ -22,7 +22,8 @@ Bibliothèque / interface (compilées avec le presale, pas déployées comme con
 | [`GhostVerifier.sol`](./GhostVerifier.sol) | Vérifications Schnorr BN256 ; hérité par `GhostPresale`. |
 | [`IGhostProtocolV2ForPresale.sol`](./IGhostProtocolV2ForPresale.sol) | Interface : `pseudo1ToCommit` sur le V2 déployé. |
 | `IGhostTokenPresaleCap` (dans [`GhostPresale.sol`](./GhostPresale.sol)) | Lecture de `PRIVATE_SALE_ALLOC()` sur le token au constructeur du presale. |
-| [`mocks/MockGhostProtocolV2ForPresale.sol`](./mocks/MockGhostProtocolV2ForPresale.sol) | Utilisé uniquement par `estimate-ghost-deploy-gas.ts` sur réseau Hardhat (pas déployé en production). |
+| [`mocks/MockGhostProtocolV2ForPresale.sol`](./mocks/MockGhostProtocolV2ForPresale.sol) | Mock `pseudo1ToCommit` pour tests Hardhat / estimation gas — **pas** déployé en production. |
+| [`mocks/ReentrantRefundAttacker.sol`](./mocks/ReentrantRefundAttacker.sol) | Contrat de test uniquement : tentative de réentrance sur `refund()` — **pas** déployé en production. |
 
 ---
 

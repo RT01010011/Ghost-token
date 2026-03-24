@@ -19,12 +19,10 @@ Détail des flux post-déploiement, vesting, splitter ETH et checklist mainnet :
 
 Ce dépôt porte le **contrat jeton GHOST**, la **prévente** et les **scripts Hardhat** pour **Base**. Le **protocole Ghost** (Schnorr, application, `ghost-schnorr-libz.js`, SDK npm) vit dans le dépôt **Ghost Protocol V2** — auteur **Rayane Hila**, ligne produit **RayTech R&D** dans les métadonnées de ce projet.
 
-Remplace les URL ci-dessous par tes liens publics réels une fois les dépôts créés sur GitHub :
-
-| Dépôt | Contenu principal | URL (à compléter) |
-|-------|-------------------|-------------------|
-| **ghost-token** (ce repo) | ERC-20, prévente, déploiement Base | `https://github.com/…/…` |
-| **ghost-protocol-v2** | Protocole, UX Electron, SDK | `https://github.com/…/…` |
+| Dépôt | Contenu principal | URL |
+|-------|-------------------|-----|
+| **Ghost-token** (ce dépôt) | ERC-20, prévente, déploiement Base, tests Hardhat | [github.com/RT01010011/Ghost-token](https://github.com/RT01010011/Ghost-token) |
+| **Ghost Protocol V2** | Protocole Schnorr, application, SDK npm (source hors de ce repo) | *À lier ici quand le dépôt public est publié* (même organisation ou compte GitHub). |
 
 Détail des titulaires, Git et contact : [`docs/TITULAIRE-LICENCE.md`](docs/TITULAIRE-LICENCE.md) et [`docs/ECOSYSTEM-GITHUB.md`](docs/ECOSYSTEM-GITHUB.md).
 
@@ -37,6 +35,9 @@ Détail des titulaires, Git et contact : [`docs/TITULAIRE-LICENCE.md`](docs/TITU
 - [Titulaire de la licence / société / Git](docs/TITULAIRE-LICENCE.md)
 - [Lien avec les autres dépôts GitHub](docs/ECOSYSTEM-GITHUB.md)
 - [Politique de sécurité et signalement](SECURITY.md)
+- [Contribuer](CONTRIBUTING.md)
+- [Audits (statut & transparence)](audits/README.md)
+- [Tests Hardhat](tests/README.md)
 
 ## Prérequis
 
@@ -53,8 +54,19 @@ npm ci
 
 ```bash
 npm run compile:token
+npm run test:token
 npm run estimate:deploy:gas
 ```
+
+La suite **183 tests** Hardhat couvre le token, la prévente, le splitter, le registre bonus et la cohérence Schnorr (`ghost-schnorr-libz.js`). Détail : [`tests/README.md`](tests/README.md). Sur Windows en cas de manque mémoire : `NODE_OPTIONS=--max-old-space-size=8192` avant `npm run test:token`.
+
+## Audits externes
+
+Politique et statut : [`audits/README.md`](audits/README.md) — pas d’audit tiers publié à ce jour ; les tests automatisés ne remplacent pas un audit professionnel.
+
+## International
+
+La documentation est principalement en **français** (cible projet). Pour une audience investisseurs internationale, une version **anglaise** du README / tokenomics peut être ajoutée en parallèle (`README.en.md`, etc.).
 
 ## Déploiement (Base mainnet)
 

@@ -8,9 +8,12 @@ Seule la branche principale et les tags de release actifs reçoivent des correct
 
 Ne pas ouvrir d’issue publique pour un problème sensible (clés, RPC, détails d’exploitation).
 
-**Contact projet (hors vulnérabilité sensible)** : [rayane.h42@proton.me](mailto:rayane.h42@proton.me) — **Rayane Hila**, **RayTech Solution**.
+**Canaux recommandés (par ordre)** :
 
-1. Pour une vulnérabilité : écrire **en privé** à cette adresse ou utiliser **GitHub Security Advisories** si activé sur le dépôt.
+1. **[GitHub Security Advisories](https://docs.github.com/code-security/security-advisories)** — onglet **Security** du dépôt → *Report a vulnerability* (si disponible pour ton rôle).
+2. **E-mail privé** : [rayane.h42@proton.me](mailto:rayane.h42@proton.me) — **Rayane Hila**, **RayTech Solution**.
+
+**Contact général projet** (pas pour signalement sensible) : même adresse ou issues GitHub publiques pour questions non critiques.
 2. Décrire l’impact, les étapes de reproduction réduites, et éventuellement un correctif suggéré.
 3. Accorder un délai raisonnable avant toute divulgation publique.
 

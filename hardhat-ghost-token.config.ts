@@ -1,3 +1,6 @@
+/**
+ * Jeton GHOST + prévente. Tests Hardhat dans `./tests` (voir `tests/README.md`).
+ */
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import * as dotenv from "dotenv";

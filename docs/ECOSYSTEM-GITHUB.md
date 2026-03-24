@@ -20,8 +20,8 @@ Les deux se rejoignent en production via l’adresse **`GHOST_PROTOCOL_V2`** dan
 
 Dans le [`README.md`](../README.md), section **Écosystème GitHub**, remplace les placeholders `https://github.com/…/…` par :
 
-1. L’URL **exacte** de ce dépôt (jeton).
-2. L’URL **exacte** du dépôt Ghost Protocol V2.
+1. Ce dépôt jeton : **https://github.com/RT01010011/Ghost-token**
+2. L’URL **exacte** du dépôt Ghost Protocol V2 (à compléter quand il est public).
 
 Tu peux aussi ajouter dans `package.json` :
 

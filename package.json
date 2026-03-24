@@ -5,8 +5,17 @@
   "author": "Rayane Hila <rayane.h42@proton.me> (RayTech Solution)",
   "license": "MIT",
   "description": "Dépot ghost tokken — jeton GHOST et prévente (Hardhat, Base)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RT01010011/Ghost-token.git"
+  },
+  "bugs": {
+    "url": "https://github.com/RT01010011/Ghost-token/issues"
+  },
+  "homepage": "https://github.com/RT01010011/Ghost-token#readme",
   "scripts": {
     "compile:token": "hardhat compile --config hardhat-ghost-token.config.ts",
+    "test:token": "hardhat test --config hardhat-ghost-token.config.ts",
     "estimate:deploy:gas": "hardhat run scripts/estimate-ghost-deploy-gas.ts --config hardhat-ghost-token.config.ts",
     "deploy:token:base": "hardhat run scripts/deploy-ghost-token.ts --config hardhat-ghost-token.config.ts --network base",
     "deploy:token:baseSepolia": "hardhat run scripts/deploy-ghost-token.ts --config hardhat-ghost-token.config.ts --network baseSepolia",
