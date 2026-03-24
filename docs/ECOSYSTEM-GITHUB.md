@@ -14,6 +14,7 @@ Les deux se rejoignent en production via l’adresse **`GHOST_PROTOCOL_V2`** dan
 - **Personne** : **Rayane Hila** (orthographe alignée sur le `package.json` du dépôt Ghost Protocol V2).
 - **Entreprise (copyright MIT, ce dépôt)** : **RayTech Solution**.
 - **Marque / R&D** sur l’autre dépôt : **RayTech R&D** (champ `author` / `copyright` Electron dans Ghost Protocol V2) — à voir comme la ligne technique ou la marque produit du même groupe ; adapte si ta structure juridique impose une seule dénomination partout.
+- **Contact** : [rayane.h42@proton.me](mailto:rayane.h42@proton.me).
 
 ## URL GitHub
 
@@ -35,12 +36,12 @@ Tu peux aussi ajouter dans `package.json` :
 
 ## E-mail Git (important)
 
-L’e-mail utilisé pour **`git commit`** (`git config user.email`) apparaît dans l’historique public GitHub. Il doit être **celui que tu affiches volontairement** sur tes autres dépôts publics — pas une adresse personnelle ou de test non voulue.
+L’e-mail utilisé pour **`git commit`** (`git config user.email`) apparaît dans l’historique public GitHub. Pour ce projet, l’adresse de contact officielle du dépôt est **rayane.h42@proton.me** — tu peux l’utiliser pour `user.email` afin d’aligner commits et documentation.
 
 ```bash
 cd "chemin/vers/dépôt tokken"
 git config user.name "Rayane Hila"
-git config user.email "TON_EMAIL_PUBLIC_GITHUB"
+git config user.email "rayane.h42@proton.me"
 ```
 
 Répète avec le même couple **name / email** sur le dépôt Ghost Protocol V2 si tu veux une traçabilité cohérente.

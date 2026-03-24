@@ -47,3 +47,7 @@ npm run deploy:ecosystem:base
 Les adresses déployées sont écrites dans `deployed-addresses-ghost-ecosystem.json`.
 
 Répartition du supply et flux après déploiement : [`TOKENOMICS.md`](./TOKENOMICS.md). Premier push GitHub : [`GITHUB-PUBLICATION.md`](./GITHUB-PUBLICATION.md).
+
+## Contact
+
+**Rayane Hila** — **RayTech Solution** — [rayane.h42@proton.me](mailto:rayane.h42@proton.me).

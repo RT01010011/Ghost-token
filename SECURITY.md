@@ -8,7 +8,9 @@ Seule la branche principale et les tags de release actifs reçoivent des correct
 
 Ne pas ouvrir d’issue publique pour un problème sensible (clés, RPC, détails d’exploitation).
 
-1. Contacter les mainteneurs **en privé** (e-mail ou GitHub Security Advisories si activé sur le dépôt).
+**Contact projet (hors vulnérabilité sensible)** : [rayane.h42@proton.me](mailto:rayane.h42@proton.me) — **Rayane Hila**, **RayTech Solution**.
+
+1. Pour une vulnérabilité : écrire **en privé** à cette adresse ou utiliser **GitHub Security Advisories** si activé sur le dépôt.
 2. Décrire l’impact, les étapes de reproduction réduites, et éventuellement un correctif suggéré.
 3. Accorder un délai raisonnable avant toute divulgation publique.
 

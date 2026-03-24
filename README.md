@@ -74,6 +74,10 @@ Les adresses déployées sont écrites dans `deployed-addresses-ghost-ecosystem.
 - Sur Base mainnet / Sepolia, le script d’écosystème **exige** les adresses wallet et les fenêtres de prévente dans `.env` (voir [SECURITY.md](SECURITY.md)).
 - Les contrats ne remplacent pas un audit indépendant avant toute utilisation en production.
 
+## Contact
+
+**Rayane Hila** — **RayTech Solution** — [rayane.h42@proton.me](mailto:rayane.h42@proton.me) (questions générales ; pour les failles de sécurité, voir [SECURITY.md](SECURITY.md)).
+
 ## Licence
 
 [MIT](LICENSE) — copyright **RayTech Solution** (2026). Auteur principal du code et de l’écosystème : **Rayane Hila** (voir [`docs/TITULAIRE-LICENCE.md`](docs/TITULAIRE-LICENCE.md)).

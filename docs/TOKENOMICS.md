@@ -59,4 +59,8 @@ Fixés par variables d’environnement au déploiement (voir [`.env.example`](..
 3. `npm run deploy:ecosystem:base` au moment voulu.  
 4. Conserver `deployed-addresses-ghost-ecosystem.json` en local (non versionné) et mettre à jour les interfaces / explorateur.
 
+## Contact
+
+**Rayane Hila** — **RayTech Solution** — [rayane.h42@proton.me](mailto:rayane.h42@proton.me).
+
 *Les chiffres ci-dessus sont des faits de code ; toute communication publique (site, whitepaper) doit rester alignée avec le bytecode déployé.*

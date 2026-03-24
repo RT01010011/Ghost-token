@@ -2,7 +2,7 @@
   "name": "depot-ghost-tokken",
   "version": "1.0.0",
   "private": true,
-  "author": "Rayane Hila (RayTech Solution)",
+  "author": "Rayane Hila <rayane.h42@proton.me> (RayTech Solution)",
   "license": "MIT",
   "description": "Dépot ghost tokken — jeton GHOST et prévente (Hardhat, Base)",
   "scripts": {

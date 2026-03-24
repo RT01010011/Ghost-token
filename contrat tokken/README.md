@@ -131,3 +131,9 @@ Bibliothèque / interface (compilées avec le presale, pas déployées comme con
 | `pseudo1ToCommit` | Commitment composite du compte Ghost pour un `pseudo1` donné. |
 
 Pour le détail d’implémentation ligne par ligne, se référer aux fichiers `.sol` ; ce README décrit les **responsabilités** et l’**ordre de déploiement**, pas une relecture exhaustive du source.
+
+---
+
+## Contact (projet)
+
+**Rayane Hila** — **RayTech Solution** — [rayane.h42@proton.me](mailto:rayane.h42@proton.me) — sécurité : voir [`../SECURITY.md`](../SECURITY.md).
