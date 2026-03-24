@@ -2,6 +2,8 @@
   "name": "depot-ghost-tokken",
   "version": "1.0.0",
   "private": true,
+  "author": "Rayane Hila (RayTech Solution)",
+  "license": "MIT",
   "description": "Dépot ghost tokken — jeton GHOST et prévente (Hardhat, Base)",
   "scripts": {
     "compile:token": "hardhat compile --config hardhat-ghost-token.config.ts",

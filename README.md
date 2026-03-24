@@ -15,12 +15,27 @@ Compilation et déploiement du jeton **GHOST** et de l’écosystème associé s
 
 Détail des flux post-déploiement, vesting, splitter ETH et checklist mainnet : **[`docs/TOKENOMICS.md`](docs/TOKENOMICS.md)**.
 
+## Écosystème GitHub (même organisation / auteur)
+
+Ce dépôt porte le **contrat jeton GHOST**, la **prévente** et les **scripts Hardhat** pour **Base**. Le **protocole Ghost** (Schnorr, application, `ghost-schnorr-libz.js`, SDK npm) vit dans le dépôt **Ghost Protocol V2** — auteur **Rayane Hila**, ligne produit **RayTech R&D** dans les métadonnées de ce projet.
+
+Remplace les URL ci-dessous par tes liens publics réels une fois les dépôts créés sur GitHub :
+
+| Dépôt | Contenu principal | URL (à compléter) |
+|-------|-------------------|-------------------|
+| **ghost-token** (ce repo) | ERC-20, prévente, déploiement Base | `https://github.com/…/…` |
+| **ghost-protocol-v2** | Protocole, UX Electron, SDK | `https://github.com/…/…` |
+
+Détail des titulaires, Git et contact : [`docs/TITULAIRE-LICENCE.md`](docs/TITULAIRE-LICENCE.md) et [`docs/ECOSYSTEM-GITHUB.md`](docs/ECOSYSTEM-GITHUB.md).
+
 ## Documentation
 
 - [Tokenomics et flux on-chain](docs/TOKENOMICS.md)
 - [Structure du dépôt et variables d’environnement](docs/STRUCTURE-ET-DEPLOIEMENT.md)
 - [Contrats Solidity — rôles et déploiement](contrat%20tokken/README.md)
 - [Publication sur GitHub (remote, push)](docs/GITHUB-PUBLICATION.md)
+- [Titulaire de la licence / société / Git](docs/TITULAIRE-LICENCE.md)
+- [Lien avec les autres dépôts GitHub](docs/ECOSYSTEM-GITHUB.md)
 - [Politique de sécurité et signalement](SECURITY.md)
 
 ## Prérequis
@@ -61,4 +76,4 @@ Les adresses déployées sont écrites dans `deployed-addresses-ghost-ecosystem.
 
 ## Licence
 
-[MIT](LICENSE)
+[MIT](LICENSE) — copyright **RayTech Solution** (2026). Auteur principal du code et de l’écosystème : **Rayane Hila** (voir [`docs/TITULAIRE-LICENCE.md`](docs/TITULAIRE-LICENCE.md)).
