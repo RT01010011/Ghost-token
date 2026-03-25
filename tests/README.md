@@ -14,7 +14,7 @@
 
 **Nombre de tests** : **183** scénarios Mocha (état vérifié avec `npm run test:token`).
 
-Origine : suite portée depuis le dépôt **Ghost Protocol V2** (`test-ghost-token/`), adaptée pour ce dépôt autonome (`./helpers/presaleBonus`, `../ghost-schnorr-libz.js`).
+Origine : suite portée depuis le dépôt **[Ghost Protocol V2](https://github.com/RT01010011/ghost-protocol-v2)** (dossier `test-ghost-token/` en amont), adaptée pour ce dépôt autonome (`./helpers/presaleBonus`, `../ghost-schnorr-libz.js`).
 
 ## Commandes
 

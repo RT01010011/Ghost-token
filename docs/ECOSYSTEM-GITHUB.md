@@ -5,7 +5,7 @@
 | Dépôt | Rôle |
 |-------|------|
 | **Ce dépôt** (`depot-ghost-tokken` / jeton GHOST) | Contrats Solidity du jeton, prévente, bonus, scripts `deploy:ecosystem:base`, tokenomics documentée. |
-| **Ghost Protocol V2** (dépôt local typique : `ghost protocol V2  dépot`) | `GhostProtocolV2` on-chain, UX, `ghost-schnorr-libz.js`, paquet `@ghost-protocol/sdk`, tests de cohérence Schnorr / prévente. |
+| **Ghost Protocol V2** — [dépôt GitHub](https://github.com/RT01010011/ghost-protocol-v2) (clone local possible : `ghost protocol V2  dépot`) | `GhostProtocolV2` on-chain, UX Electron, `ghost-schnorr-libz.js`, paquet `@ghost-protocol/sdk`, tests protocole & cohérence Schnorr / prévente. |
 
 Les deux se rejoignent en production via l’adresse **`GHOST_PROTOCOL_V2`** dans le `.env` du déploiement token et l’adresse **`GhostPresale`** côté UX.
 
@@ -18,21 +18,15 @@ Les deux se rejoignent en production via l’adresse **`GHOST_PROTOCOL_V2`** dan
 
 ## URL GitHub
 
-Dans le [`README.md`](../README.md), section **Écosystème GitHub**, remplace les placeholders `https://github.com/…/…` par :
+Liens publics :
 
-1. Ce dépôt jeton : **https://github.com/RT01010011/Ghost-token**
-2. L’URL **exacte** du dépôt Ghost Protocol V2 (à compléter quand il est public).
+- **Jeton GHOST (ce dépôt)** : [https://github.com/RT01010011/Ghost-token](https://github.com/RT01010011/Ghost-token)
+- **Ghost Protocol V2** : [https://github.com/RT01010011/ghost-protocol-v2](https://github.com/RT01010011/ghost-protocol-v2)
 
-Tu peux aussi ajouter dans `package.json` :
+Exemples de champ `repository` dans `package.json` :
 
-```json
-"repository": {
-  "type": "git",
-  "url": "https://github.com/TON_COMPTE/TON_REPO_JETON.git"
-}
-```
-
-(même chose dans l’autre dépôt pour le lien inverse si tu veux une boucle claire).
+- **Ghost-token** : `https://github.com/RT01010011/Ghost-token.git` (déjà renseigné ici).
+- **ghost-protocol-v2** : `https://github.com/RT01010011/ghost-protocol-v2.git` (à ajouter dans l’autre dépôt si absent).
 
 ## E-mail Git (important)
 

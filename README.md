@@ -22,7 +22,7 @@ Ce dépôt porte le **contrat jeton GHOST**, la **prévente** et les **scripts H
 | Dépôt | Contenu principal | URL |
 |-------|-------------------|-----|
 | **Ghost-token** (ce dépôt) | ERC-20, prévente, déploiement Base, tests Hardhat | [github.com/RT01010011/Ghost-token](https://github.com/RT01010011/Ghost-token) |
-| **Ghost Protocol V2** | Protocole Schnorr, application, SDK npm (source hors de ce repo) | *À lier ici quand le dépôt public est publié* (même organisation ou compte GitHub). |
+| **Ghost Protocol V2** | Protocole Schnorr, UI desktop Electron, `ghost-schnorr-libz.js`, SDK, tests protocole | [github.com/RT01010011/ghost-protocol-v2](https://github.com/RT01010011/ghost-protocol-v2) |
 
 Détail des titulaires, Git et contact : [`docs/TITULAIRE-LICENCE.md`](docs/TITULAIRE-LICENCE.md) et [`docs/ECOSYSTEM-GITHUB.md`](docs/ECOSYSTEM-GITHUB.md).
 
