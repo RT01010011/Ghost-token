@@ -4,14 +4,20 @@
 
 ```
 dépôt tokken/
-├── README.md                      # Point d’entrée : commandes et liens
-├── package.json                   # Scripts npm et dépendances Hardhat
-├── package-lock.json              # Verrouillage des versions npm
-├── tsconfig.json                  # Compilation TypeScript des scripts
-├── hardhat-ghost-token.config.ts  # Réseaux Base / Sepolia, chemins, Solidity 0.8.28
-├── .env.example                   # Modèle de variables (sans secrets)
+├── README.md                      # Point d’entrée : commandes, tokenomics, liens GitHub, contact
+├── LICENSE                        # MIT — RayTech Solution
+├── SECURITY.md                    # Advisories GitHub + rayane.h42@proton.me
+├── CONTRIBUTING.md
+├── ghost-schnorr-libz.js          # Lib Schnorr (tests PresaleSdkCoherence) — alignée [ghost-protocol-v2](https://github.com/RT01010011/ghost-protocol-v2)
+├── package.json                   # Scripts npm, repository GitHub, auteur + e-mail
+├── package-lock.json
+├── tsconfig.json
+├── hardhat-ghost-token.config.ts
+├── .env.example
 ├── .gitignore
-├── docs/
+├── .gitattributes
+├── .github/                       # CI, Dependabot, CODEOWNERS
+├── docs/                          # TOKENOMICS, ECOSYSTEM-GITHUB, GITHUB-PUBLICATION, etc.
 │   └── STRUCTURE-ET-DEPLOIEMENT.md  # Ce fichier
 ├── scripts/
 │   ├── deploy-ghost-ecosystem.ts  # Déploiement token + vestings + timelock + splitter + presale + bonus + transferts

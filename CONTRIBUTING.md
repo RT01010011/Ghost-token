@@ -24,3 +24,7 @@ Les changements sensibles (`contrat tokken/*.sol`, `scripts/deploy-*.ts`) doiven
 ## Sécurité
 
 Signalement d’une vulnérabilité : voir [SECURITY.md](SECURITY.md) — **pas** d’issue publique pour les failles exploitables.
+
+## Contact
+
+**Rayane Hila** — **RayTech Solution** — [rayane.h42@proton.me](mailto:rayane.h42@proton.me)

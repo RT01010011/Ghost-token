@@ -10,12 +10,15 @@ Ne pas ouvrir d’issue publique pour un problème sensible (clés, RPC, détail
 
 **Canaux recommandés (par ordre)** :
 
-1. **[GitHub Security Advisories](https://docs.github.com/code-security/security-advisories)** — onglet **Security** du dépôt → *Report a vulnerability* (si disponible pour ton rôle).
+1. **[GitHub Security Advisories](https://docs.github.com/code-security/security-advisories)** — onglet **Security** du dépôt [Ghost-token](https://github.com/RT01010011/Ghost-token) → *Report a vulnerability* (si disponible pour ton rôle).
 2. **E-mail privé** : [rayane.h42@proton.me](mailto:rayane.h42@proton.me) — **Rayane Hila**, **RayTech Solution**.
 
-**Contact général projet** (pas pour signalement sensible) : même adresse ou issues GitHub publiques pour questions non critiques.
-2. Décrire l’impact, les étapes de reproduction réduites, et éventuellement un correctif suggéré.
-3. Accorder un délai raisonnable avant toute divulgation publique.
+Après contact initial :
+
+3. Décrire l’impact, les étapes de reproduction réduites, et éventuellement un correctif suggéré.
+4. Accorder un délai raisonnable avant toute divulgation publique.
+
+**Contact général projet** (questions non sensibles) : [rayane.h42@proton.me](mailto:rayane.h42@proton.me) ou [issues GitHub](https://github.com/RT01010011/Ghost-token/issues).
 
 ## Bonnes pratiques pour les contributeurs et opérateurs
 

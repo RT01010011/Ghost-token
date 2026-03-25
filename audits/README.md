@@ -17,3 +17,7 @@ Dès qu’un **audit de sécurité externe** (ou un programme de bug bounty) est
 ## Transparence
 
 L’absence de fichier dans `audits/` **ne remplace pas** un audit professionnel pour les décisions d’investissement ou d’allocation de fonds. Les utilisateurs et investisseurs doivent traiter les smart contracts comme **à haut risque** tant qu’aucun audit reconnu n’est associé à la version déployée.
+
+## Contact (questions sur la feuille de route audit)
+
+**Rayane Hila** — **RayTech Solution** — [rayane.h42@proton.me](mailto:rayane.h42@proton.me)

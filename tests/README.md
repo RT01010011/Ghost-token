@@ -32,3 +32,7 @@ npm run test:token
 ## Prérequis
 
 Aucun `.env` obligatoire pour les tests : réseau **Hardhat** intégré, **MockGhostProtocolV2ForPresale** et **ReentrantRefundAttacker** dans `contrat tokken/mocks/`.
+
+## Contact
+
+**Rayane Hila** — **RayTech Solution** — [rayane.h42@proton.me](mailto:rayane.h42@proton.me)
