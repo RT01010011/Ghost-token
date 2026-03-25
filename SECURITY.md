@@ -25,7 +25,7 @@ Après contact initial :
 - Ne jamais committer `.env`, clés privées, mnémoniques ni URLs RPC avec clé secrète.
 - Vérifier `git status` et l’historique avant un `push` public.
 - Sur **Base mainnet / Sepolia**, le script `deploy-ghost-ecosystem.ts` exige toutes les variables wallet et les timestamps de prévente dans `.env` (aucune adresse de production par défaut dans le code).
-- Préférer des revues de code et des audits externes pour les déploiements mainnet.
+- Pour le mainnet, prévoir des revues de code structurées et, le cas échéant, un bilan de sécurité ou audit externe selon la feuille de route projet.
 
 ## Dépendances
 

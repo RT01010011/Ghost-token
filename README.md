@@ -36,7 +36,7 @@ Détail des titulaires, Git et contact : [`docs/TITULAIRE-LICENCE.md`](docs/TITU
 - [Lien avec les autres dépôts GitHub](docs/ECOSYSTEM-GITHUB.md)
 - [Politique de sécurité et signalement](SECURITY.md)
 - [Contribuer](CONTRIBUTING.md)
-- [Audits (statut & transparence)](audits/README.md)
+- [Audits externes (statut)](audits/README.md)
 - [Tests Hardhat](tests/README.md)
 
 ## Prérequis
@@ -62,7 +62,7 @@ La suite **183 tests** Hardhat couvre le token, la prévente, le splitter, le re
 
 ## Audits externes
 
-Politique et statut : [`audits/README.md`](audits/README.md) — pas d’audit tiers publié à ce jour ; les tests automatisés ne remplacent pas un audit professionnel.
+Statut et feuille de route : [`audits/README.md`](audits/README.md). Aucun rapport d’audit tiers n’est publié dans ce dossier pour l’instant ; le code est couvert par une **suite de tests Hardhat** (183 scénarios) et une documentation on-chain détaillée.
 
 ## International
 
@@ -84,7 +84,7 @@ Les adresses déployées sont écrites dans `deployed-addresses-ghost-ecosystem.
 
 - Ne jamais committer `.env`, clés privées ni secrets RPC.
 - Sur Base mainnet / Sepolia, le script d’écosystème **exige** les adresses wallet et les fenêtres de prévente dans `.env` (voir [SECURITY.md](SECURITY.md)).
-- Les contrats ne remplacent pas un audit indépendant avant toute utilisation en production.
+- Avant tout déploiement mainnet, suivre la checklist projet (`.env`, compilation, voir [`docs/TOKENOMICS.md`](docs/TOKENOMICS.md)).
 
 ## Contact
 

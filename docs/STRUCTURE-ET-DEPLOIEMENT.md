@@ -28,7 +28,7 @@ dépôt tokken/
 │   ├── helpers/                   # presaleBonus (aligné registre bonus)
 │   └── *.test.ts                  # Token, prévente, sécurité, cohérence Schnorr
 ├── audits/
-│   └── README.md                  # Statut audits externes & transparence
+│   └── README.md                  # Statut audits externes
 ├── CONTRIBUTING.md
 ├── .gitattributes                 # Fin de ligne (LF) pour Solidity / TS
 └── contrat tokken/
