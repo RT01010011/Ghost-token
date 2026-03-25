@@ -28,7 +28,13 @@ git remote set-url origin https://github.com/RT01010011/Ghost-token.git
 git push -u origin main
 ```
 
-Si GitHub affiche encore un **ancien README** (sans e-mail, sans tests, sans lien ghost-protocol-v2), c’est en général que les **derniers commits n’ont pas été poussés** : refaire `git push origin main` après avoir résolu l’auth (PAT avec scope **`workflow`** si tu modifies `.github/workflows/`).
+Si GitHub affiche encore un **ancien README**, c’est souvent que les **commits n’ont pas été poussés**.
+
+### Erreur : `refusing to allow a Personal Access Token ... without workflow scope`
+
+Cela vient du **PAT en HTTPS** : sans scope **`workflow`**, GitHub bloque les fichiers sous `.github/workflows/`.
+
+**Correctifs :** passer le `remote` en **SSH** (section ci-dessus) **ou** créer un PAT avec **`repo` + `workflow`** et te ré-authentifier. Pas besoin de retirer le workflow du dépôt si tu utilises l’une de ces deux méthodes.
 
 ## Après un push réussi
 

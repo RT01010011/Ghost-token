@@ -150,8 +150,9 @@ async function main() {
     const SOFT_CAP_ETH = ethers.parseEther(process.env.GHOST_PRESALE_SOFT_CAP_ETH ?? "0");
     const HARD_CAP_ETH = ethers.parseEther(process.env.GHOST_PRESALE_HARD_CAP_ETH ?? "10000");
     const MAX_PER_WALLET = ethers.parseEther(process.env.GHOST_PRESALE_MAX_ETH_PER_WALLET ?? "1");
-    let START_TIME = u64("GHOST_PRESALE_START_UNIX", 1774400400);
-    let END_TIME = u64("GHOST_PRESALE_END_UNIX", 1775005200);
+    // Défauts dev (31337) : début jeudi 26 mars 2026 02:00 Europe/Paris (CET) ; fin jeudi 2 avril 2026 02:00 Paris (CEST) — 7 j calendaires, pas +604800 s (évite +1 h au passage DST).
+    let START_TIME = u64("GHOST_PRESALE_START_UNIX", 1774486800);
+    let END_TIME = u64("GHOST_PRESALE_END_UNIX", 1775088000);
     const REWARDS_LOCK_SEC = u64("GHOST_REWARDS_LOCK_SECONDS", 365 * 24 * 3600);
 
     const VESTING_TEAM_CLIFF = 6 * 30 * 24 * 3600;
