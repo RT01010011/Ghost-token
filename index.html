@@ -2922,6 +2922,19 @@
             'event ClaimedViaGhostProtocol(bytes32 indexed pseudo1Hash, address indexed recipient, address indexed payout, uint256 ghostAmount)',
         ];
 
+        const DEFAULT_GHOST_PRESALE_MAINNET = '0x9E5B75E5bf82aD2ed250E473A394B557688C6522';
+
+        function applyDefaultGhostPresaleAddress() {
+            const inp = document.getElementById('sendPresaleContractInput');
+            if (!inp || inp.value.trim()) return;
+            const saved = localStorage.getItem('ghost_presale_contract');
+            if (saved !== null && saved.trim() !== '') {
+                inp.value = saved.trim();
+            } else {
+                inp.value = DEFAULT_GHOST_PRESALE_MAINNET;
+            }
+        }
+
         const ERC20_ABI = [
             'function approve(address spender, uint256 amount) external returns (bool)',
             'function allowance(address owner, address spender) external view returns (uint256)',
@@ -6142,9 +6155,7 @@
         });
 
         document.querySelector('[data-tab="send"]').addEventListener('click', () => {
-            const saved = localStorage.getItem('ghost_presale_contract');
-            const inp = document.getElementById('sendPresaleContractInput');
-            if (inp && saved && !inp.value.trim()) inp.value = saved;
+            applyDefaultGhostPresaleAddress();
             refreshSendPresalePseudoLine();
             scheduleRefreshSendPresaleV2Align();
         });
@@ -7119,6 +7130,8 @@
                 if (createHintEl) createHintEl.textContent = '~' + recCreateStr + ' ETH';
             } catch { }
         })();
+
+        applyDefaultGhostPresaleAddress();
 
         window.addEventListener('beforeunload', () => {
             localStorage.removeItem('ghost_pseudo1');

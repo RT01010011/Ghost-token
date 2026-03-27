@@ -36,6 +36,7 @@ Détail des titulaires, Git et contact : [`docs/TITULAIRE-LICENCE.md`](docs/TITU
 - [Notes pré-GitHub / synchro contrats–SDK (bilingue)](docs/PRE-GITHUB-DEV-NOTES.md)
 - [Structure du dépôt et variables d’environnement](docs/STRUCTURE-ET-DEPLOIEMENT.md)
 - [Contrats Solidity — rôles et déploiement](contrat%20tokken/README.md)
+- [Feuille de route déploiement Base + airdrop 100 GHOST](contrat%20tokken/FEUILLE-DE-ROUTE-DEPLOIEMENT.md)
 - [Publication sur GitHub (remote, push)](docs/GITHUB-PUBLICATION.md)
 - [Titulaire de la licence / société / Git](docs/TITULAIRE-LICENCE.md)
 - [Lien avec les autres dépôts GitHub](docs/ECOSYSTEM-GITHUB.md)
@@ -44,6 +45,21 @@ Détail des titulaires, Git et contact : [`docs/TITULAIRE-LICENCE.md`](docs/TITU
 - [Audits externes (statut)](audits/README.md)
 - [Tests Hardhat](tests/README.md)
 - [SDK & intégration plateforme (Ghost Protocol)](sdk/README.md)
+
+## Documentation plutôt que « commentaires dev » dans le code
+
+**Règle projet** : pas de brouillons d’équipe, TODO longs, notes de debug ou explications produit **dans** les fichiers Solidity, scripts ou `index.html`. Ce type de contenu va dans **ce README**, dans [`docs/`](docs/) ou dans [`contrat tokken/README.md`](contrat%20tokken/README.md) / [`FEUILLE-DE-ROUTE-DEPLOIEMENT.md`](contrat%20tokken/FEUILLE-DE-ROUTE-DEPLOIEMENT.md).  
+Le code reste **lisible** ; la **doc** porte le contexte, les choix et les checklists.
+
+Les **NatSpec** courts (`@title`, `@notice`) sur les fonctions publiques peuvent rester si utiles aux intégrateurs et auditeurs.
+
+## Avant un `git push` (données sensibles)
+
+- Ne jamais versionner **`.env`**, clés privées, mnémoniques, jetons d’API (Basescan, RPC avec clé secrète).
+- Ne pas committer les fichiers **`deployed-addresses-*.json`** (déjà dans [`.gitignore`](.gitignore)) : ils peuvent refléter ton déploiement personnel ; les adresses mainnet **publiques** peuvent en revanche être documentées **à la main** dans la doc si tu le souhaites, sans rejouer de secrets.
+- Vérifier `git diff` / `git status` avant push.
+
+Dépôt public : **[github.com/RT01010011/Ghost-token](https://github.com/RT01010011/Ghost-token)**.
 
 ## Prérequis
 
@@ -78,13 +94,21 @@ La documentation est principalement en **français** (cible projet). Pour une au
 
 Le wallet associé à `PRIVATE_KEY` doit disposer d’**ETH sur Base** pour le gas.
 
+**Écosystème complet** (token, prévente, vestings, splitter, registre bonus, etc.) :
+
 ```bash
 npm run deploy:ecosystem:base
 ```
 
-Les adresses déployées sont écrites dans `deployed-addresses-ghost-ecosystem.json` (fichier ignoré par Git — ne pas le committer s’il contient des données sensibles).
+**Registre welcome 100 GHOST** (`GhostPresaleWelcomeRegistry`) — **séparé**, pour ne pas redéployer l’écosystème déjà en place ; détail et anti-doublon : [`scripts/deploy-ghost-welcome-registry-only.ts`](scripts/deploy-ghost-welcome-registry-only.ts).
 
-**Avant un déploiement mainnet** : vérifier `.env` (wallets, `GHOST_PRESALE_*`, `GHOST_PROTOCOL_V2`) et lancer `npm run compile:token` ; voir aussi la fin de [`docs/TOKENOMICS.md`](docs/TOKENOMICS.md).
+```bash
+npm run deploy:welcome-registry:base
+```
+
+Les adresses déployées sont écrites dans `deployed-addresses-ghost-ecosystem.json` et `deployed-addresses-ghost-welcome-registry.json` (fichiers **ignorés par Git** — ne pas les committer).
+
+**Avant un déploiement mainnet** : vérifier `.env` (wallets, `GHOST_PRESALE_*`, `GHOST_PROTOCOL_V2`) et lancer `npm run compile:token` ; voir aussi la fin de [`docs/TOKENOMICS.md`](docs/TOKENOMICS.md) et [`contrat tokken/FEUILLE-DE-ROUTE-DEPLOIEMENT.md`](contrat%20tokken/FEUILLE-DE-ROUTE-DEPLOIEMENT.md).
 
 ## Prévente GHOST : soft cap, finalisation et UX
 
@@ -94,11 +118,10 @@ Documentation **produit / dev** (ne pas dupliquer en commentaires dans `index.ht
 - Les fonctions **`enableRefundMode()`** et **`refund()`** du contrat ne sont pertinentes que pour un déploiement avec **soft cap strictement positif** et une levée **restée sous** ce seuil ; avec soft cap à 0, `enableRefundMode()` revert toujours.
 - L’**UX** (`index.html`) n’expose que le **remboursement volontaire** pendant la fenêtre d’achat (`remboursementVolontaire`), pas de bouton « remboursement soft cap », ce qui correspond à cette configuration.
 
-## Sécurité
+## Sécurité (rappel)
 
-- Ne jamais committer `.env`, clés privées ni secrets RPC.
-- Sur Base mainnet / Sepolia, le script d’écosystème **exige** les adresses wallet et les fenêtres de prévente dans `.env` (voir [SECURITY.md](SECURITY.md)).
-- Avant tout déploiement mainnet, suivre la checklist projet (`.env`, compilation, voir [`docs/TOKENOMICS.md`](docs/TOKENOMICS.md)).
+- Ne jamais committer `.env`, clés privées ni secrets RPC (voir aussi section *Avant un git push* ci-dessus).
+- Signalement de vulnérabilités : [SECURITY.md](SECURITY.md).
 
 ## Contact
 

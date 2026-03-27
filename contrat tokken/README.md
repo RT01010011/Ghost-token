@@ -16,6 +16,7 @@ Fichiers sources du token **GHOST** (Ghost Protocol) et mécanismes associés.
 | `GhostPresale.sol` | Prévente ETH → GHOST (paramètres au déploiement). |
 | `GhostEthProceedsSplitter.sol` | Répartition des ETH au `finalize()` vers 5 wallets (bps). |
 | `GhostPresaleBonusRegistry.sol` | Éligibilité bonus % sur GHOST prévente + `credentialId` (couche externe). |
+| `GhostPresaleWelcomeRegistry.sol` | Airdrop **100 GHOST** (admin `recordWelcomeAccount`, utilisateur `claim` après `claimOpensAt`). Déploiement **isolé** : `npm run deploy:welcome-registry:base` + `scripts/deploy-ghost-welcome-registry-only.ts` (ne redéploie pas token/prévente). |
 
 ### `GhostPresale` — lien `recipient` ↔ pseudo1 (achat Ghost)
 

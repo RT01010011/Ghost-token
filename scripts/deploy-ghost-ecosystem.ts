@@ -7,6 +7,9 @@
  * Commande :
  *   npx hardhat run scripts/deploy-ghost-ecosystem.ts --config hardhat-ghost-token.config.ts --network base
  *
+ * Airdrop 100 GHOST (`GhostPresaleWelcomeRegistry`) : **ne pas** ajouter ici — script dédié pour éviter tout
+ * redéploiement accidentel du reste : `scripts/deploy-ghost-welcome-registry-only.ts` → `npm run deploy:welcome-registry:base`.
+ *
  * Prérequis : `.env` avec PRIVATE_KEY, BASE_RPC_URL, BASESCAN_API_KEY (pour vérif manuelle si besoin).
  *
  * Surcharges optionnelles (variables d’environnement) :
@@ -15,7 +18,7 @@
  *   GHOST_PER_ETH_GHOST (ex. 212000), GHOST_PRESALE_SOFT_CAP_ETH, GHOST_PRESALE_HARD_CAP_ETH,
  *   GHOST_PRESALE_MAX_ETH_PER_WALLET (anti-whale, > 0 obligatoire),
  *   GHOST_PRESALE_START_UNIX, GHOST_PRESALE_END_UNIX (les deux ensemble ; sinon mode auto ci-dessous).
- *     Réf. prévente cible : START=1774573800 (ven. 27 mars 2026 02:10 Europe/Paris CET), END=1775178600 (= START + 604800 s, 7 j exacts) — identique à `.env.example`.
+ *     Réf. prévente (.env.example) : START=1774660860 (sam. 28 mars 2026 02:21 Europe/Paris CET), END=1775265660 (= START + 604800 s) — à ajuster si START ≤ heure chaîne.
  *   GHOST_PRESALE_START_DELAY_SECONDS (défaut 172 800 = 48 h après l’heure chaîne au déploiement si pas de START/END)
  *   GHOST_PRESALE_DURATION_SECONDS (défaut 604 800 = 7 jours de fenêtre prévente)
  *   GHOST_REWARDS_LOCK_SECONDS (défaut : 31536000 = 365 j)
@@ -24,6 +27,11 @@
  *   GHOST_PRESALE_BONUS_BPS (défaut 500) : bonus « rendement » sur GHOST achetés en prévente (GhostPresaleBonusRegistry).
  *   GHOST_BONUS_CREDENTIAL_DOMAIN (optionnel) : bytes32 hex 0x… ; sinon keccak256("GhostPresaleBonusRegistry.v1").
  *   GHOST_PROTOCOL_V2 (obligatoire) : adresse du contrat GhostProtocolV2 déployé (pseudo1ToCommit pour buyTokensGhost ; les commits Schnorr sont passés en calldata par l’appelant).
+ *   Reprise partielle (même déployeur, même jeton) — évite les doublons si le script s’arrête au milieu :
+ *   GHOST_ECOSYSTEM_EXISTING_TOKEN, GHOST_ECOSYSTEM_EXISTING_TEAM_VESTING, GHOST_ECOSYSTEM_EXISTING_TREASURY_VESTING,
+ *   GHOST_ECOSYSTEM_EXISTING_TIMELOCK, GHOST_ECOSYSTEM_EXISTING_ETH_SPLITTER, GHOST_ECOSYSTEM_EXISTING_PRESALE,
+ *   GHOST_ECOSYSTEM_EXISTING_BONUS_REGISTRY
+ *   (adresses 0x… valides ; chaque variable sautée si absente).
  *
  * Séparation déployeur / tokenomics (recommandé prod) :
  *   - Le compte PRIVATE_KEY ne doit PAS être admin prévente ni bénéficiaire des tranches : le script
@@ -44,8 +52,21 @@
  */
 
 import { ethers } from "hardhat";
+import { Contract } from "ethers";
 import * as fs from "fs";
 import * as path from "path";
+
+/** Copie des constantes `GhostToken.sol` — évite les `eth_call` vides juste après le deploy sur certains RPC publics. */
+const _W = 10n ** 18n;
+const GHOST_TOKEN_ALLOC_WEI = {
+    TOTAL_SUPPLY: 33_000_000n * _W,
+    AIRDROP: 6_600_000n * _W,
+    TREASURY: 5_940_000n * _W,
+    TEAM: 5_610_000n * _W,
+    REWARDS: 6_600_000n * _W,
+    LIQUIDITY: 3_300_000n * _W,
+    PRIVATE_SALE: 4_950_000n * _W,
+} as const;
 
 function addr(key: string, fallback: string): string {
     const v = process.env[key]?.trim();
@@ -63,6 +84,57 @@ function u64(key: string, fallback: number): number {
 
 function eqAddr(a: string, b: string): boolean {
     return a.toLowerCase() === b.toLowerCase();
+}
+
+function existingAddr(key: string): string | undefined {
+    const v = process.env[key]?.trim();
+    if (v && /^0x[a-fA-F0-9]{40}$/.test(v)) return v;
+    return undefined;
+}
+
+/** Certains RPC publics renvoient `0x` sur les `eth_call` juste après un create — on réessaie. */
+async function rpcRetry<T>(label: string, fn: () => Promise<T>, attempts = 20, delayMs = 2500): Promise<T> {
+    let lastErr: unknown;
+    for (let a = 1; a <= attempts; a++) {
+        try {
+            return await fn();
+        } catch (e) {
+            lastErr = e;
+            console.warn(`      (RPC « ${label} » — essai ${a}/${attempts}, attente ${delayMs / 1000}s…)`);
+            await new Promise((r) => setTimeout(r, delayMs));
+        }
+    }
+    throw lastErr;
+}
+
+function isNonceOrGasConflict(err: unknown): boolean {
+    const msg = String((err as { shortMessage?: string; message?: string })?.shortMessage ?? (err as Error)?.message ?? err);
+    return /replacement|underpriced|nonce|already known/i.test(msg);
+}
+
+/** File d’attente mempool / RPC : on réessaie après pause (souvent une tx identique est encore pending). */
+async function transferGhostWithRetry(token: Contract, to: string, amount: bigint, label: string): Promise<void> {
+    const maxAttempts = 30;
+    const pauseMs = 10_000;
+    let lastErr: unknown;
+    for (let a = 1; a <= maxAttempts; a++) {
+        try {
+            const tx = await token.transfer(to, amount);
+            await tx.wait();
+            return;
+        } catch (e) {
+            lastErr = e;
+            if (isNonceOrGasConflict(e)) {
+                console.warn(
+                    `      Transfert « ${label} » — conflit nonce / gas (essai ${a}/${maxAttempts}), attente ${pauseMs / 1000}s…`
+                );
+                await new Promise((r) => setTimeout(r, pauseMs));
+                continue;
+            }
+            throw e;
+        }
+    }
+    throw lastErr;
 }
 
 /**
@@ -296,50 +368,78 @@ async function main() {
 
     // 1. GhostToken
     console.log("1/7 — GhostToken…");
-    const token = await (await ethers.getContractFactory("GhostToken")).deploy();
-    await token.waitForDeployment();
+    const tokenFactory = await ethers.getContractFactory("GhostToken");
+    const reuseToken = process.env.GHOST_ECOSYSTEM_EXISTING_TOKEN?.trim();
+    let token: Contract;
+    if (reuseToken && /^0x[a-fA-F0-9]{40}$/.test(reuseToken)) {
+        token = tokenFactory.attach(reuseToken);
+        console.log(`      Reprise jeton existant (GHOST_ECOSYSTEM_EXISTING_TOKEN) : ${reuseToken}`);
+    } else {
+        token = await tokenFactory.deploy();
+        await token.waitForDeployment();
+    }
     const tokenAddr = await token.getAddress();
     console.log(`      OK ${tokenAddr}\n`);
 
+    const vestingFactory = await ethers.getContractFactory("GhostVesting");
+    const timelockFactory = await ethers.getContractFactory("GhostTimelock");
+    const splitterFactory = await ethers.getContractFactory("GhostEthProceedsSplitter");
+    const presaleFactory = await ethers.getContractFactory("GhostPresale");
+
     // 2. GhostVesting Équipe
     console.log("2/7 — GhostVesting équipe…");
-    const teamVesting = await (
-        await ethers.getContractFactory("GhostVesting")
-    ).deploy(
-        tokenAddr,
-        WALLETS.TEAM,
-        now,
-        VESTING_TEAM_CLIFF,
-        VESTING_TEAM_DURATION,
-        await token.TEAM_ALLOC()
-    );
-    await teamVesting.waitForDeployment();
+    const exTeam = existingAddr("GHOST_ECOSYSTEM_EXISTING_TEAM_VESTING");
+    let teamVesting: Contract;
+    if (exTeam) {
+        teamVesting = vestingFactory.attach(exTeam);
+        console.log(`      Reprise (GHOST_ECOSYSTEM_EXISTING_TEAM_VESTING) : ${exTeam}`);
+    } else {
+        teamVesting = await vestingFactory.deploy(
+            tokenAddr,
+            WALLETS.TEAM,
+            now,
+            VESTING_TEAM_CLIFF,
+            VESTING_TEAM_DURATION,
+            GHOST_TOKEN_ALLOC_WEI.TEAM
+        );
+        await teamVesting.waitForDeployment();
+    }
     const teamVestingAddr = await teamVesting.getAddress();
     console.log(`      OK ${teamVestingAddr}\n`);
 
     // 3. GhostVesting Trésorerie
     console.log("3/7 — GhostVesting trésorerie…");
-    const treasuryVesting = await (
-        await ethers.getContractFactory("GhostVesting")
-    ).deploy(
-        tokenAddr,
-        WALLETS.TREASURY,
-        now,
-        VESTING_TREASURY_CLIFF,
-        VESTING_TREASURY_DURATION,
-        await token.TREASURY_ALLOC()
-    );
-    await treasuryVesting.waitForDeployment();
+    const exTreasury = existingAddr("GHOST_ECOSYSTEM_EXISTING_TREASURY_VESTING");
+    let treasuryVesting: Contract;
+    if (exTreasury) {
+        treasuryVesting = vestingFactory.attach(exTreasury);
+        console.log(`      Reprise (GHOST_ECOSYSTEM_EXISTING_TREASURY_VESTING) : ${exTreasury}`);
+    } else {
+        treasuryVesting = await vestingFactory.deploy(
+            tokenAddr,
+            WALLETS.TREASURY,
+            now,
+            VESTING_TREASURY_CLIFF,
+            VESTING_TREASURY_DURATION,
+            GHOST_TOKEN_ALLOC_WEI.TREASURY
+        );
+        await treasuryVesting.waitForDeployment();
+    }
     const treasuryVestingAddr = await treasuryVesting.getAddress();
     console.log(`      OK ${treasuryVestingAddr}\n`);
 
     // 4. GhostTimelock Récompenses
     console.log("4/7 — GhostTimelock récompenses…");
     const rewardsUnlock = now + REWARDS_LOCK_SEC;
-    const timelock = await (
-        await ethers.getContractFactory("GhostTimelock")
-    ).deploy(tokenAddr, WALLETS.REWARDS, rewardsUnlock);
-    await timelock.waitForDeployment();
+    const exTimelock = existingAddr("GHOST_ECOSYSTEM_EXISTING_TIMELOCK");
+    let timelock: Contract;
+    if (exTimelock) {
+        timelock = timelockFactory.attach(exTimelock);
+        console.log(`      Reprise (GHOST_ECOSYSTEM_EXISTING_TIMELOCK) : ${exTimelock}`);
+    } else {
+        timelock = await timelockFactory.deploy(tokenAddr, WALLETS.REWARDS, rewardsUnlock);
+        await timelock.waitForDeployment();
+    }
     const timelockAddr = await timelock.getAddress();
     console.log(`      OK ${timelockAddr}`);
     console.log(`      Déverrouillage : ${new Date(rewardsUnlock * 1000).toISOString()}\n`);
@@ -353,42 +453,52 @@ async function main() {
         WALLETS.REWARDS,
         WALLETS.LIQUIDITY,
     ];
-    const ethProceedsSplitter = await (
-        await ethers.getContractFactory("GhostEthProceedsSplitter")
-    ).deploy(splitRecipients, ethSplitBps);
-    await ethProceedsSplitter.waitForDeployment();
+    const exSplitter = existingAddr("GHOST_ECOSYSTEM_EXISTING_ETH_SPLITTER");
+    let ethProceedsSplitter: Contract;
+    if (exSplitter) {
+        ethProceedsSplitter = splitterFactory.attach(exSplitter);
+        console.log(`      Reprise (GHOST_ECOSYSTEM_EXISTING_ETH_SPLITTER) : ${exSplitter}`);
+    } else {
+        ethProceedsSplitter = await splitterFactory.deploy(splitRecipients, ethSplitBps);
+        await ethProceedsSplitter.waitForDeployment();
+    }
     const ethProceedsSplitterAddr = await ethProceedsSplitter.getAddress();
     console.log(`      OK ${ethProceedsSplitterAddr}`);
     console.log(`      Bps (Airdrop, Trésorerie, Équipe, Récompenses, Liquidité) : ${ethSplitBps.join(", ")}\n`);
 
     // 6. GhostPresale
     console.log("6/7 — GhostPresale…");
-    const presale = await (
-        await ethers.getContractFactory("GhostPresale")
-    ).deploy(
-        tokenAddr,
-        WALLETS.PRESALE_ADMIN,
-        ethProceedsSplitterAddr,
-        GHOST_PROTOCOL_V2,
-        GHOST_PER_ETH,
-        SOFT_CAP_ETH,
-        HARD_CAP_ETH,
-        MAX_PER_WALLET,
-        START_TIME,
-        END_TIME
-    );
-    await presale.waitForDeployment();
+    const exPresale = existingAddr("GHOST_ECOSYSTEM_EXISTING_PRESALE");
+    let presale: Contract;
+    if (exPresale) {
+        presale = presaleFactory.attach(exPresale);
+        console.log(`      Reprise (GHOST_ECOSYSTEM_EXISTING_PRESALE) : ${exPresale}`);
+    } else {
+        presale = await presaleFactory.deploy(
+            tokenAddr,
+            WALLETS.PRESALE_ADMIN,
+            ethProceedsSplitterAddr,
+            GHOST_PROTOCOL_V2,
+            GHOST_PER_ETH,
+            SOFT_CAP_ETH,
+            HARD_CAP_ETH,
+            MAX_PER_WALLET,
+            START_TIME,
+            END_TIME
+        );
+        await presale.waitForDeployment();
+    }
     const presaleAddr = await presale.getAddress();
     console.log(`      OK ${presaleAddr}`);
 
-    const presaleToken = await presale.ghostToken();
+    const presaleToken = await rpcRetry("GhostPresale.ghostToken", () => presale.ghostToken());
     if (presaleToken.toLowerCase() !== tokenAddr.toLowerCase()) {
         throw new Error(
             `Incohérence critique : GhostPresale.ghostToken()=${presaleToken} != GhostToken déployé ${tokenAddr}`
         );
     }
-    const privateSaleCap = await token.PRIVATE_SALE_ALLOC();
-    const maxGhost = await presale.maxGhostAllocatable();
+    const privateSaleCap = GHOST_TOKEN_ALLOC_WEI.PRIVATE_SALE;
+    const maxGhost = await rpcRetry("GhostPresale.maxGhostAllocatable", () => presale.maxGhostAllocatable());
     if (maxGhost !== privateSaleCap) {
         throw new Error(
             `Incohérence : maxGhostAllocatable (${maxGhost}) != PRIVATE_SALE_ALLOC (${privateSaleCap})`
@@ -397,16 +507,16 @@ async function main() {
     console.log(`      ✓ Presale lié au même GhostToken (${tokenAddr})`);
     console.log(`      ✓ maxGhostAllocatable = PRIVATE_SALE_ALLOC = ${ethers.formatEther(maxGhost)} GHOST`);
 
-    const onChainMaxWallet = await presale.maxPerWallet();
+    const onChainMaxWallet = await rpcRetry("GhostPresale.maxPerWallet", () => presale.maxPerWallet());
     if (onChainMaxWallet !== MAX_PER_WALLET) {
         throw new Error(`maxPerWallet on-chain (${onChainMaxWallet}) != valeur script (${MAX_PER_WALLET})`);
     }
-    const onChainGhostPerEth = await presale.ghostPerEth();
+    const onChainGhostPerEth = await rpcRetry("GhostPresale.ghostPerEth", () => presale.ghostPerEth());
     if (onChainGhostPerEth !== GHOST_PER_ETH) {
         throw new Error(`ghostPerEth on-chain != valeur script`);
     }
     const oneGhost = ethers.parseEther("1");
-    const ethFor1Ghost = await presale.ethForGhost(oneGhost);
+    const ethFor1Ghost = await rpcRetry("GhostPresale.ethForGhost", () => presale.ethForGhost(oneGhost));
     console.log(`      ✓ Anti-whale on-chain : maxPerWallet = ${ethers.formatEther(onChainMaxWallet)} ETH`);
     console.log(
         `      ✓ Taux on-chain : ghostPerEth OK — ethForGhost(1 GHOST) = ${ethers.formatEther(ethFor1Ghost)} ETH\n`
@@ -414,10 +524,16 @@ async function main() {
 
     // 7. Registre bonus +5 % prévente (couche externe — credential + indexation)
     console.log("7/7 — GhostPresaleBonusRegistry…");
-    const bonusRegistry = await (
-        await ethers.getContractFactory("GhostPresaleBonusRegistry")
-    ).deploy(presaleAddr, BONUS_BPS, BONUS_CRED_DOMAIN);
-    await bonusRegistry.waitForDeployment();
+    const bonusFactory = await ethers.getContractFactory("GhostPresaleBonusRegistry");
+    const exBonus = existingAddr("GHOST_ECOSYSTEM_EXISTING_BONUS_REGISTRY");
+    let bonusRegistry: Contract;
+    if (exBonus) {
+        bonusRegistry = bonusFactory.attach(exBonus);
+        console.log(`      Reprise (GHOST_ECOSYSTEM_EXISTING_BONUS_REGISTRY) : ${exBonus}`);
+    } else {
+        bonusRegistry = await bonusFactory.deploy(presaleAddr, BONUS_BPS, BONUS_CRED_DOMAIN);
+        await bonusRegistry.waitForDeployment();
+    }
     const bonusRegistryAddr = await bonusRegistry.getAddress();
     console.log(`      OK ${bonusRegistryAddr}`);
     console.log(`      bonusBps = ${BONUS_BPS} (ex. 500 = 5 % sur GHOST achetés en prévente)`);
@@ -426,15 +542,15 @@ async function main() {
     // Distribution — montants lus on-chain depuis GhostToken (source de vérité = contrat)
     console.log("Distribution des GHOST…");
     const transfers: [string, bigint, string][] = [
-        [WALLETS.AIRDROP, await token.AIRDROP_ALLOC(), "6 600 000 → airdrop"],
-        [teamVestingAddr, await token.TEAM_ALLOC(), "5 610 000 → vesting équipe"],
-        [treasuryVestingAddr, await token.TREASURY_ALLOC(), "5 940 000 → vesting trésorerie"],
-        [timelockAddr, await token.REWARDS_ALLOC(), "6 600 000 → timelock récompenses"],
-        [WALLETS.LIQUIDITY, await token.LIQUIDITY_ALLOC(), "3 300 000 → liquidité"],
-        [presaleAddr, await token.PRIVATE_SALE_ALLOC(), "4 950 000 → prévente"],
+        [WALLETS.AIRDROP, GHOST_TOKEN_ALLOC_WEI.AIRDROP, "6 600 000 → airdrop"],
+        [teamVestingAddr, GHOST_TOKEN_ALLOC_WEI.TEAM, "5 610 000 → vesting équipe"],
+        [treasuryVestingAddr, GHOST_TOKEN_ALLOC_WEI.TREASURY, "5 940 000 → vesting trésorerie"],
+        [timelockAddr, GHOST_TOKEN_ALLOC_WEI.REWARDS, "6 600 000 → timelock récompenses"],
+        [WALLETS.LIQUIDITY, GHOST_TOKEN_ALLOC_WEI.LIQUIDITY, "3 300 000 → liquidité"],
+        [presaleAddr, GHOST_TOKEN_ALLOC_WEI.PRIVATE_SALE, "4 950 000 → prévente"],
     ];
 
-    const totalSupply = await token.TOTAL_SUPPLY();
+    const totalSupply = GHOST_TOKEN_ALLOC_WEI.TOTAL_SUPPLY;
     let sumOut = 0n;
     for (const [to, amount, label] of transfers) {
         if (!to || to === ethers.ZeroAddress) {
@@ -450,20 +566,25 @@ async function main() {
             `Somme des transferts (${sumOut}) ≠ TOTAL_SUPPLY (${totalSupply}) — ne pas déployer, tokenomics incohérente.`
         );
     }
-    const balDeployerBefore = await token.balanceOf(deployer.address);
-    if (balDeployerBefore !== totalSupply) {
-        throw new Error(
-            `Le déployeur devrait détenir 100 % du supply avant distribution ; solde=${balDeployerBefore}, attendu=${totalSupply}.`
-        );
-    }
 
     for (const [to, amount, label] of transfers) {
-        const tx = await token.transfer(to, amount);
-        await tx.wait();
+        const have = await rpcRetry(`GhostToken.balanceOf(${label})`, () => token.balanceOf(to));
+        if (have >= amount) {
+            console.log(`  Déjà OK — ${label} (${ethers.formatEther(have)} GHOST sur la cible)`);
+            continue;
+        }
+        if (have !== 0n) {
+            throw new Error(
+                `« ${label} » : solde partiel ${ethers.formatEther(have)} GHOST (attendu 0 ou ≥ ${ethers.formatEther(amount)}).`
+            );
+        }
+        await transferGhostWithRetry(token, to, amount, label);
         console.log(`  OK ${label}`);
     }
 
-    const leftover = await token.balanceOf(deployer.address);
+    const leftover = await rpcRetry("GhostToken.balanceOf(déployeur) final", () =>
+        token.balanceOf(deployer.address)
+    );
     if (leftover > 0n) {
         const msg = `Reste sur déployeur : ${ethers.formatEther(leftover)} GHOST — la tokenomics n’est pas entièrement distribuée.`;
         if (cid === 31337n || process.env.GHOST_ALLOW_LEFTOVER_ON_DEPLOYER === "1") {

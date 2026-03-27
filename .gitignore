@@ -12,6 +12,7 @@ cache-ghost-token/
 artifacts-ghost-token/
 deployed-addresses-ghost-token.json
 deployed-addresses-ghost-ecosystem.json
+deployed-addresses-ghost-welcome-registry.json
 dist-ts/
 typechain-types/
 *.log

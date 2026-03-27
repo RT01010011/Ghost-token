@@ -31,7 +31,9 @@
     "deploy:token:base": "hardhat run scripts/deploy-ghost-token.ts --config hardhat-ghost-token.config.ts --network base",
     "deploy:token:baseSepolia": "hardhat run scripts/deploy-ghost-token.ts --config hardhat-ghost-token.config.ts --network baseSepolia",
     "deploy:ecosystem:base": "hardhat run scripts/deploy-ghost-ecosystem.ts --config hardhat-ghost-token.config.ts --network base",
-    "deploy:ecosystem:baseSepolia": "hardhat run scripts/deploy-ghost-ecosystem.ts --config hardhat-ghost-token.config.ts --network baseSepolia"
+    "deploy:ecosystem:baseSepolia": "hardhat run scripts/deploy-ghost-ecosystem.ts --config hardhat-ghost-token.config.ts --network baseSepolia",
+    "deploy:welcome-registry:base": "hardhat run scripts/deploy-ghost-welcome-registry-only.ts --config hardhat-ghost-token.config.ts --network base",
+    "deploy:welcome-registry:baseSepolia": "hardhat run scripts/deploy-ghost-welcome-registry-only.ts --config hardhat-ghost-token.config.ts --network baseSepolia"
   },
   "dependencies": {
     "@ledgerhq/hw-app-eth": "^7.5.0",

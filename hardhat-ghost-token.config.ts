@@ -20,6 +20,21 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
+/** Gwei → wei (bigint), pour overrides gas Base en déploiement. */
+function gweiEnvToWei(key: string): bigint | undefined {
+    const raw = process.env[key]?.trim();
+    if (!raw) return undefined;
+    const n = parseFloat(raw);
+    if (Number.isNaN(n) || n <= 0) return undefined;
+    return BigInt(Math.ceil(n * 1e9));
+}
+
+const baseGasOverrides: { maxFeePerGas?: bigint; maxPriorityFeePerGas?: bigint } = {};
+const mf = gweiEnvToWei("BASE_DEPLOY_MAX_FEE_GWEI");
+const mp = gweiEnvToWei("BASE_DEPLOY_PRIORITY_FEE_GWEI");
+if (mf) baseGasOverrides.maxFeePerGas = mf;
+if (mp) baseGasOverrides.maxPriorityFeePerGas = mp;
+
 const config: HardhatUserConfig = {
     solidity: {
         version: "0.8.28",
@@ -43,6 +58,7 @@ const config: HardhatUserConfig = {
             url: process.env.BASE_RPC_URL || "https://mainnet.base.org",
             accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
             chainId: 8453,
+            ...(Object.keys(baseGasOverrides).length > 0 ? baseGasOverrides : {}),
         },
         baseSepolia: {
             url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
