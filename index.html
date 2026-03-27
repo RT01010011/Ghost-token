@@ -1700,40 +1700,43 @@
 
             <div id="sendSectionWelcome" class="hidden">
                 <div class="card" style="background:rgba(167,139,250,0.07); border-color:rgba(167,139,250,0.28);">
-                    <p style="font-size:0.74rem; color:var(--text-sec); line-height:1.6;">
-                        <strong>Airdrop welcome 100 GHOST</strong> — contrat <code style="font-size:0.68rem;">GhostPresaleWelcomeRegistry</code> (distinct de la prévente).<br>
-                        L’équipe enregistre ton compte (<code>recordWelcomeAccount</code>) ; tu récupères les jetons avec <code>claim(pseudo1)</code> une fois <strong>claimOpensAt</strong> passé.<br>
-                        <span style="display:block;margin-top:0.45rem;color:var(--text-dim);font-size:0.68rem;">Règles on-chain : <strong>msg.sender</strong> doit être l’adresse <strong>payout</strong> enregistrée ; le pseudo doit être exactement celui inscrit. Ce n’est <strong>pas</strong> le <code>claim()</code> de la prévente (achat ETH).</span>
-                        <span style="display:block;margin-top:0.4rem;color:rgba(167,139,250,0.95);font-size:0.68rem;"><strong>Pas de Schnorr ici</strong> : le smart contract n’attend aucune preuve Schnorr pour <code>claim</code> — seulement une transaction signée par le wallet <strong>payout</strong>. Les modes Connexion manuel / auto servent à préremplir le <strong>pseudo1</strong> (bouton ci‑dessous), pas à prouver l’identité on-chain pour ce contrat.</span>
+                    <p style="font-size:0.78rem; color:var(--text-sec); line-height:1.65;">
+                        <strong>Les 100 GHOST de bienvenue</strong><br>
+                        Si vous avez créé votre compte Ghost pendant la prévente et que l’équipe vous a ajouté à la liste, vous pouvez recevoir vos jetons ici une fois la date d’ouverture atteinte.<br>
+                        <span style="display:block;margin-top:0.5rem;color:var(--text-dim);font-size:0.72rem;">Ce module est distinct de l’achat de GHOST avec des ETH : il concerne uniquement l’enveloppe communautaire « bienvenue ». Votre <strong>pseudo affiché ci‑dessous</strong> est celui de votre session : vous ne pouvez pas le modifier, afin d’éviter les erreurs et les demandes sur un mauvais compte.</span>
+                        <span style="display:block;margin-top:0.45rem;color:var(--text-dim);font-size:0.72rem;">La clé demandée est celle du <strong>portefeuille qui recevra les jetons</strong> : elle doit correspondre exactement à l’adresse communiquée à l’équipe lors de votre inscription (souvent le même que votre premier portefeuille Ghost).</span>
                     </p>
                 </div>
                 <div class="card">
-                    <h3 style="color:#c4b5fd; font-size:0.88rem;">Contrat welcome registry</h3>
+                    <h3 style="color:#c4b5fd; font-size:0.88rem;">Réception de l’airdrop</h3>
                     <div class="form-group">
-                        <label class="form-label">Adresse GhostPresaleWelcomeRegistry</label>
+                        <label class="form-label">Adresse du programme (réseau Base)</label>
                         <input type="text" id="sendWelcomeRegistryInput" class="form-input" placeholder="0x…"
                             oninput="ensureAddrPrefix(this)"
                             onchange="try{localStorage.setItem('ghost_welcome_registry_contract', (this.value||'').trim())}catch(e){}"
                             onfocus="prefillAddr(this)" style="font-size:0.76rem; font-family:var(--mono);">
-                        <small>Enregistrée sur ce navigateur · défaut déploiement Base de référence si vide au chargement</small>
+                        <small style="color:var(--text-dim);">Préremplie pour le déploiement officiel ; conservée sur cet appareil si vous la modifiez.</small>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Pseudo1 (compte Ghost)</label>
-                        <input type="text" id="sendWelcomePseudo1Input" class="form-input" placeholder="Même pseudo public qu’à la création du compte">
-                        <button type="button" id="sendWelcomeFillPseudoBtn" class="btn btn-secondary" style="margin-top:0.45rem; font-size:0.72rem;">Remplir avec le pseudo1 de la session (auto ou manuel)</button>
+                        <label class="form-label">Votre pseudo Ghost</label>
+                        <div id="sendWelcomePseudo1Display" class="form-input" tabindex="-1" aria-live="polite"
+                            style="background:rgba(0,0,0,0.32); border-color:rgba(167,139,250,0.25); cursor:default; color:var(--gold); font-family:var(--mono); font-size:0.78rem; min-height:2.65rem; display:flex; align-items:center;">
+                            —
+                        </div>
+                        <small style="color:var(--text-dim);">Issu de votre connexion dans l’onglet <strong>Connexion</strong> (saisie automatique ou manuelle). Sans session active, la réception n’est pas disponible.</small>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Clé privée du wallet <strong>payout</strong></label>
+                        <label class="form-label">Clé privée du portefeuille de réception</label>
                         <div class="password-wrapper">
-                            <input type="password" id="sendWelcomePayoutKeyInput" class="form-input" placeholder="0x + 64 hex — doit correspondre à l’adresse enregistrée par l’admin"
+                            <input type="password" id="sendWelcomePayoutKeyInput" class="form-input" placeholder="0x suivi de 64 caractères hexadécimaux"
                                 oninput="ensureAddrPrefix(this)" onfocus="prefillAddr(this)">
                             <button type="button" class="eye-btn" onclick="toggleEye('sendWelcomePayoutKeyInput',this)" title="Afficher"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
                         </div>
-                        <small style="color:var(--text-dim);">Ce portefeuille signe <code>claim()</code> (ethers.js / RPC réel) et reçoit les GHOST. Non prérempli : choix volontaire ; si l’admin t’a enregistré sur l’adresse de ta <strong>key1</strong>, utilise cette clé.</small>
+                        <small style="color:var(--text-dim);">Ce portefeuille signe l’opération et reçoit les GHOST. Elle n’est jamais enregistrée par l’application.</small>
                     </div>
                     <div style="display:flex; flex-wrap:wrap; gap:0.45rem;">
-                        <button type="button" id="sendWelcomeRefreshBtn" class="btn btn-secondary" style="flex:1; min-width:160px;">Actualiser le statut (on-chain)</button>
-                        <button type="button" id="sendWelcomeClaimBtn" class="btn btn-approve" style="flex:1; min-width:180px;">Réclamer l’airdrop welcome</button>
+                        <button type="button" id="sendWelcomeRefreshBtn" class="btn btn-secondary" style="flex:1; min-width:160px;">Actualiser mon statut</button>
+                        <button type="button" id="sendWelcomeClaimBtn" class="btn btn-approve" style="flex:1; min-width:180px;">Recevoir mes 100 GHOST</button>
                     </div>
                     <pre id="sendWelcomeStatusPre" style="display:none; margin:0.75rem 0 0; padding:0.55rem 0.65rem; background:rgba(0,0,0,0.35); border-radius:8px; font-size:0.68rem; font-family:var(--mono); white-space:pre-wrap; word-break:break-all; color:var(--text-sec);"></pre>
                     <div id="sendWelcomeAirdropMsg" class="hidden" style="margin-top:0.75rem; white-space:pre-line; font-size:0.76rem;"></div>
@@ -2976,6 +2979,7 @@
             'function presale() view returns (address)',
             'function ghostV2() view returns (address)',
             'function welcomeAmountWei() view returns (uint256)',
+            'function maxRecipients() view returns (uint256)',
             'function claimOpensAt() view returns (uint256)',
             'function recordedCount() view returns (uint256)',
             'function entries(bytes32) view returns (address payout, bool claimed)',
@@ -3258,6 +3262,7 @@
                 void refreshPresaleBuyEthUiCaps();
                 scheduleRefreshSendPresaleV2Align();
             }
+            if (mode === 'welcome') refreshWelcomePseudoDisplay();
         }
 
         let presaleSendSub = 'external';
@@ -3673,10 +3678,22 @@
             }
         }
 
+        function refreshWelcomePseudoDisplay() {
+            const wel = document.getElementById('sendWelcomePseudo1Display');
+            if (!wel) return;
+            if (sessionPseudo1) {
+                wel.textContent = '"' + sessionPseudo1 + '"';
+                wel.style.color = 'var(--gold)';
+            } else {
+                wel.textContent = '— Connectez-vous dans l’onglet Connexion —';
+                wel.style.color = 'rgba(148,163,184,0.95)';
+            }
+        }
+
         function refreshSendPresalePseudoLine() {
             const el = document.getElementById('sendPresalePseudoLine');
-            if (!el) return;
-            el.textContent = sessionPseudo1 ? ('"' + sessionPseudo1 + '"') : '— connecte-toi dans Connexion —';
+            if (el) el.textContent = sessionPseudo1 ? ('"' + sessionPseudo1 + '"') : '— connecte-toi dans Connexion —';
+            refreshWelcomePseudoDisplay();
         }
 
         function setPresaleSendSub(sub) {
@@ -6638,77 +6655,67 @@
             }
         });
 
-        document.getElementById('sendWelcomeFillPseudoBtn').addEventListener('click', () => {
-            if (!sessionPseudo1) {
-                showWelcomeAirdropMsg('error', 'Aucun pseudo en session — connecte-toi dans l’onglet Connexion.');
-                return;
-            }
-            const inp = document.getElementById('sendWelcomePseudo1Input');
-            if (inp) inp.value = sessionPseudo1;
-            showWelcomeAirdropMsg('success', 'Pseudo1 renseigné depuis la session (peu importe saisie auto ou manuelle à la connexion).');
-        });
-
         document.getElementById('sendWelcomeRefreshBtn').addEventListener('click', async () => {
             const btn = document.getElementById('sendWelcomeRefreshBtn');
             const regAddrRaw = document.getElementById('sendWelcomeRegistryInput').value.trim();
-            const pseudo1 = (document.getElementById('sendWelcomePseudo1Input').value || '').trim();
+            const pseudo1 = sessionPseudo1;
             const pre = document.getElementById('sendWelcomeStatusPre');
             const rpcUrl = getPresaleRpcUrl();
             try {
-                if (!regAddrRaw || !ethers.isAddress(regAddrRaw)) throw new Error('Adresse welcome registry invalide');
-                if (!rpcUrl) throw new Error('RPC manquant (Connexion ou champ RPC)');
+                if (!pseudo1) throw new Error('Connectez-vous dans l’onglet Connexion : votre pseudo Ghost est requis.');
+                if (!regAddrRaw || !ethers.isAddress(regAddrRaw)) throw new Error('Adresse du programme invalide.');
+                if (!rpcUrl) throw new Error('Réseau (RPC) manquant : renseignez-le dans Connexion.');
                 btn.disabled = true;
-                showWelcomeAirdropMsg('info', 'Lecture on-chain…');
+                showWelcomeAirdropMsg('info', 'Lecture des informations…');
                 const regCA = ethers.getAddress(regAddrRaw);
                 const p = new ethers.JsonRpcProvider(rpcUrl);
                 const c = new ethers.Contract(regCA, WELCOME_REGISTRY_ABI, p);
-                const [token, presaleOnReg, amtWei, opens, nRec] = await Promise.all([
+                const [token, presaleOnReg, amtWei, maxRec, opens, nRec] = await Promise.all([
                     c.token(),
                     c.presale(),
                     c.welcomeAmountWei(),
+                    c.maxRecipients(),
                     c.claimOpensAt(),
                     c.recordedCount(),
                 ]);
                 const now = BigInt(Math.floor(Date.now() / 1000));
                 const opensN = BigInt(opens);
+                const opensDate = new Date(Number(opensN) * 1000);
                 const lines = [
-                    'GhostPresaleWelcomeRegistry : ' + regCA,
-                    'token (GHOST)     : ' + token,
-                    'presale (lié)     : ' + presaleOnReg,
-                    'welcomeAmount     : ' + ethers.formatEther(amtWei) + ' GHOST',
-                    'claimOpensAt      : ' + opensN + ' → ' + new Date(Number(opensN) * 1000).toISOString(),
-                    'blockchain now    : ' + now + ' → ' + new Date(Number(now) * 1000).toISOString(),
-                    'claim ouvert      : ' + (now >= opensN ? 'oui' : 'non (trop tôt)'),
-                    'recordedCount     : ' + nRec.toString(),
+                    '— Programme —',
+                    'Adresse : ' + regCA,
+                    'Jeton GHOST : ' + token,
+                    'Montant prévu par personne : ' + ethers.formatEther(amtWei) + ' GHOST',
+                    'Inscriptions (tous comptes) : ' + nRec.toString() + ' / ' + maxRec.toString(),
+                    'Réception possible à partir du : ' + opensDate.toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' }) +
+                        (now >= opensN ? ' (ouvert)' : ' (pas encore)'),
+                    '',
+                    '— Votre compte (« ' + pseudo1 + ' ») —',
                 ];
+                const h = ethers.keccak256(ethers.toUtf8Bytes(pseudo1));
+                const ent = await c.entries(h);
+                const inscrit = ent.payout !== ethers.ZeroAddress;
+                lines.push('Sur la liste de l’équipe : ' + (inscrit ? 'oui' : 'non'));
+                if (inscrit) {
+                    lines.push('Portefeuille enregistré pour le versement : ' + ent.payout);
+                    lines.push('Déjà reçu : ' + (ent.claimed ? 'oui' : 'non'));
+                }
+                lines.push('');
                 const presaleUi = (document.getElementById('sendPresaleContractInput').value || '').trim();
                 if (presaleUi && ethers.isAddress(presaleUi)) {
                     const same = presaleOnReg.toLowerCase() === ethers.getAddress(presaleUi).toLowerCase();
                     lines.push(
                         same
-                            ? 'Alignement UI    : même GhostPresale que l’onglet « Prévente GHOST » ✓'
-                            : 'Alignement UI    : ⚠ prévente welcome on-chain ≠ champ Prévente — registry=' +
-                                  presaleOnReg +
-                                  ' · champ=' +
-                                  ethers.getAddress(presaleUi)
+                            ? 'Vérification : ce programme est bien lié à la même prévente que dans l’onglet « Prévente GHOST ».'
+                            : 'Attention : la prévente liée à ce programme ne correspond pas à l’adresse saisie dans « Prévente GHOST ». Vérifiez les adresses si un message d’erreur apparaît.'
                     );
-                }
-                if (pseudo1) {
-                    const h = ethers.keccak256(ethers.toUtf8Bytes(pseudo1));
-                    const ent = await c.entries(h);
-                    lines.push('— Entrée pseudo1 —');
-                    lines.push('keccak256(bytes)  : ' + h);
-                    lines.push('payout enregistré : ' + (ent.payout === ethers.ZeroAddress ? '(aucun)' : ent.payout));
-                    lines.push('déjà claim        : ' + (ent.claimed ? 'oui' : 'non'));
-                } else {
-                    lines.push('(Saisis un pseudo1 puis réactualise pour voir payout / claimed.)');
                 }
                 if (pre) {
                     pre.style.display = 'block';
                     pre.textContent = lines.join('\n');
                 }
                 try { localStorage.setItem('ghost_welcome_registry_contract', regCA); } catch (e2) {}
-                showWelcomeAirdropMsg('success', 'Statut welcome registry à jour.');
+                showWelcomeAirdropMsg('success', 'Statut mis à jour.');
             } catch (e) {
                 if (pre) {
                     pre.style.display = 'none';
@@ -6723,17 +6730,16 @@
         document.getElementById('sendWelcomeClaimBtn').addEventListener('click', async () => {
             const btn = document.getElementById('sendWelcomeClaimBtn');
             const regAddrRaw = document.getElementById('sendWelcomeRegistryInput').value.trim();
-            const pseudo1 = (document.getElementById('sendWelcomePseudo1Input').value || '').trim();
+            const pseudo1 = sessionPseudo1;
             const keyRaw = (document.getElementById('sendWelcomePayoutKeyInput').value || '').trim();
             const rpcUrl = getPresaleRpcUrl();
             try {
-                if (!regAddrRaw || !ethers.isAddress(regAddrRaw)) throw new Error('Adresse welcome registry invalide');
-                if (!pseudo1) throw new Error('Pseudo1 requis');
-                if (!rpcUrl) throw new Error('RPC manquant');
-                if (!isValidEvmPrivKeyHex(keyRaw)) throw new Error('Clé payout invalide (0x + 64 hex)');
+                if (!pseudo1) throw new Error('Connectez-vous dans l’onglet Connexion pour continuer.');
+                if (!regAddrRaw || !ethers.isAddress(regAddrRaw)) throw new Error('Adresse du programme invalide.');
+                if (!rpcUrl) throw new Error('Réseau (RPC) manquant.');
+                if (!isValidEvmPrivKeyHex(keyRaw)) throw new Error('Clé privée invalide (format attendu : 0x suivi de 64 caractères hexadécimaux).');
                 btn.disabled = true;
-                /** eth_call via ethers — même principe que claim() prévente : exécute le contrat sur le nœud sans envoyer de tx. */
-                showWelcomeAirdropMsg('info', 'Vérification à sec sur le nœud (eth_call / staticCall)…');
+                showWelcomeAirdropMsg('info', 'Vérification avant envoi…');
                 const regCA = ethers.getAddress(regAddrRaw);
                 const p = new ethers.JsonRpcProvider(rpcUrl);
                 const w = new ethers.Wallet(keyRaw, p);
@@ -6742,13 +6748,13 @@
                     await c.claim.staticCall(pseudo1, { gasLimit: 320000n });
                 } catch (simErr) {
                     const r = simErr.reason || simErr.revert?.args?.[0] || simErr.shortMessage || simErr.message || String(simErr);
-                    throw new Error('Prévisualisation on-chain refusée — ' + r);
+                    throw new Error('L’opération serait refusée par le réseau : ' + r);
                 }
-                showWelcomeAirdropMsg('info', 'Envoi de la transaction signée (claim)…');
+                showWelcomeAirdropMsg('info', 'Envoi en cours…');
                 const tx = await c.claim(pseudo1, { gasLimit: 320000n });
                 await tx.wait();
                 try { localStorage.setItem('ghost_welcome_registry_contract', regCA); } catch (e3) {}
-                showWelcomeAirdropMsg('success', 'Airdrop welcome réclamé.\n' + tx.hash);
+                showWelcomeAirdropMsg('success', 'Réception confirmée.\nIdentifiant de transaction : ' + tx.hash);
             } catch (e) {
                 showWelcomeAirdropMsg('error', 'Erreur : ' + (e.shortMessage || e.reason || e.message));
             } finally {
@@ -7342,6 +7348,7 @@
 
         applyDefaultGhostPresaleAddress();
         applyDefaultGhostWelcomeRegistryAddress();
+        refreshWelcomePseudoDisplay();
 
         window.addEventListener('beforeunload', () => {
             localStorage.removeItem('ghost_pseudo1');
