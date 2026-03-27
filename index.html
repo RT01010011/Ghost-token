@@ -1702,65 +1702,108 @@
                 <div class="card" style="background:rgba(167,139,250,0.07); border-color:rgba(167,139,250,0.28);">
                     <p style="font-size:0.78rem; color:var(--text-sec); line-height:1.65;">
                         <strong>Les 100 GHOST de bienvenue</strong><br>
-                        Si vous avez créé votre compte Ghost pendant la prévente et que l’équipe vous a ajouté à la liste, vous pouvez recevoir vos jetons ici une fois la date d’ouverture atteinte.<br>
-                        <span style="display:block;margin-top:0.5rem;color:var(--text-dim);font-size:0.72rem;">Ce module est distinct de l’achat de GHOST avec des ETH : il concerne uniquement l’enveloppe communautaire « bienvenue ». Votre <strong>pseudo affiché ci‑dessous</strong> est celui de votre session : vous ne pouvez pas le modifier, afin d’éviter les erreurs et les demandes sur un mauvais compte.</span>
-                        <span style="display:block;margin-top:0.45rem;color:var(--text-dim);font-size:0.72rem;">Dans Ghost Protocol, les clés du compte (dont celle du « wallet 1 ») restent <strong>protégées</strong> : l’application ne les affiche pas en clair. L’airdrop, lui, est réglé sur une <strong>adresse Ethereum classique</strong> que l’équipe a liée à votre pseudo sur la blockchain : vous devez signer avec <strong>la clé privée de cette adresse précise</strong>, ou avec un <strong>portefeuille éphémère</strong> dont cette adresse a été communiquée à l’équipe avant inscription.</span>
+                        Deux étapes dans cet onglet : <strong>1)</strong> prouver votre identité Ghost (Schnorr, comme à la connexion). <strong>2)</strong> choisir l’adresse Ethereum de réception (éphémère recommandée pour la confidentialité, ou clé existante). Ensuite vous pouvez actualiser votre statut, réclamer si vous êtes déjà enregistré, ou copier la paire <strong>pseudo + adresse</strong> pour le bridge / l’équipe.<br>
+                        <span style="display:block;margin-top:0.45rem;color:var(--text-dim);font-size:0.72rem;">Le smart contract attend <code style="font-size:0.68rem;">pseudo1</code> + <code style="font-size:0.68rem;">payout</code> via <code style="font-size:0.68rem;">recordWelcomeAccount</code> (admin). Cette interface garantit que seuls les utilisateurs ayant validé Schnorr peuvent préparer ou confirmer l’adresse côté UX.</span>
                     </p>
                 </div>
                 <div class="card">
-                    <h3 style="color:#c4b5fd; font-size:0.88rem;">Réception de l’airdrop</h3>
+                    <h3 style="color:#c4b5fd; font-size:0.88rem;">Paramètres du programme</h3>
                     <div class="form-group">
                         <label class="form-label">Adresse du programme (réseau Base)</label>
                         <input type="text" id="sendWelcomeRegistryInput" class="form-input" placeholder="0x…"
                             oninput="ensureAddrPrefix(this)"
                             onchange="try{localStorage.setItem('ghost_welcome_registry_contract', (this.value||'').trim())}catch(e){}"
                             onfocus="prefillAddr(this)" style="font-size:0.76rem; font-family:var(--mono);">
-                        <small style="color:var(--text-dim);">Préremplie pour le déploiement officiel ; conservée sur cet appareil si vous la modifiez.</small>
+                        <small style="color:var(--text-dim);">Contrat GhostPresaleWelcomeRegistry — conservé sur cet appareil si vous le modifiez.</small>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Votre pseudo Ghost</label>
+                        <label class="form-label">Votre pseudo Ghost (session)</label>
                         <div id="sendWelcomePseudo1Display" class="form-input" tabindex="-1" aria-live="polite"
                             style="background:rgba(0,0,0,0.32); border-color:rgba(167,139,250,0.25); cursor:default; color:var(--gold); font-family:var(--mono); font-size:0.78rem; min-height:2.65rem; display:flex; align-items:center;">
                             —
                         </div>
-                        <small style="color:var(--text-dim);">Issu de votre connexion dans l’onglet <strong>Connexion</strong> (saisie automatique ou manuelle). Sans session active, la réception n’est pas disponible.</small>
+                        <small style="color:var(--text-dim);">Onglet <strong>Connexion</strong> requis. Sans pseudo actif, l’étape Schnorr est impossible.</small>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Portefeuille qui signe et reçoit les GHOST</label>
-                        <p style="font-size:0.68rem; color:var(--text-dim); line-height:1.5; margin:0 0 0.55rem;">
-                            Le contrat vérifie que l’adresse qui signe est bien celle enregistrée pour votre pseudo. Choisissez le même mode que pour la prévente externe : <strong>Ma clé</strong> si vous importez la clé de l’adresse indiquée à l’équipe ; <strong>Éphémère</strong> si cette adresse est (ou sera) celle d’une paire générée ici.
-                        </p>
+                </div>
+
+                <div id="sendWelcomeSchnorrGateCard" class="card" style="border-color:rgba(167,139,250,0.4);">
+                    <h3 style="color:#c4b5fd; font-size:0.88rem;">Étape 1 — Identité Ghost (Schnorr)</h3>
+                    <p style="font-size:0.72rem; color:var(--text-dim); line-height:1.55; margin:0 0 0.75rem;">
+                        Tant que cette étape n’est pas validée, l’adresse de réception reste verrouillée : personne ne peut indiquer un <code style="font-size:0.65rem;">payout</code> sans prouver le contrôle du compte associé au pseudo ci-dessus.
+                    </p>
+                    <div id="sendWelcomeSchnorrSessionBadge" class="hidden" style="padding:0.55rem 0.75rem; background:rgba(0,255,65,0.08); border:1px solid rgba(0,255,65,0.22); border-radius:8px; margin-bottom:0.75rem; font-size:0.74rem; color:var(--green);">
+                        Session avec saisie automatique : les secrets Ghost sont déjà chargés — un clic suffit pour confirmer l’identité.
+                    </div>
+                    <div id="sendWelcomeSchnorrManualBlock">
+                        <p style="font-size:0.7rem; color:var(--text-dim); margin:0 0 0.5rem;">Sans saisie auto, entrez les mêmes éléments que pour un envoi depuis le coffre : pseudo2, puis key2, puis key1.</p>
+                        <div class="form-group">
+                            <label class="form-label">Identifiant secret pseudo2</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="sendWelcomeIdPseudo2" class="form-input" placeholder="Identifiant secret pseudo2">
+                                <button type="button" class="eye-btn" onclick="toggleEye('sendWelcomeIdPseudo2',this)" title="Afficher"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Clé privée wallet 2 (key2)</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="sendWelcomeIdKey2" class="form-input" placeholder="0x + 64 hex" oninput="ensureAddrPrefix(this)" onfocus="prefillAddr(this)">
+                                <button type="button" class="eye-btn" onclick="toggleEye('sendWelcomeIdKey2',this)" title="Afficher"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Clé privée wallet 1 (key1)</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="sendWelcomeIdKey1" class="form-input" placeholder="0x + 64 hex" oninput="ensureAddrPrefix(this)" onfocus="prefillAddr(this)">
+                                <button type="button" class="eye-btn" onclick="toggleEye('sendWelcomeIdKey1',this)" title="Afficher"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="sendWelcomeVerifyIdentityBtn" class="btn btn-primary" style="width:100%; margin-top:0.25rem;">Valider mon identité Ghost pour l’airdrop</button>
+                    <div id="sendWelcomeIdentityOkPanel" class="hidden" style="margin-top:0.75rem; padding:0.65rem 0.85rem; background:rgba(167,139,250,0.12); border:1px solid rgba(167,139,250,0.35); border-radius:8px;">
+                        <div style="font-size:0.8rem; color:#e9d5ff; font-weight:600;">&#10003; Identité vérifiée</div>
+                        <p style="font-size:0.7rem; color:var(--text-dim); margin:0.35rem 0 0;">Vous pouvez passer à l’étape 2 (adresse de réception).</p>
+                        <button type="button" id="sendWelcomeResetIdentityBtn" class="btn btn-secondary" style="margin-top:0.55rem; font-size:0.72rem; padding:0.45rem 0.75rem;">Réinitialiser l’étape identité</button>
+                    </div>
+                </div>
+
+                <div id="sendWelcomePostSchnorrBlock" class="hidden">
+                <div class="card">
+                    <h3 style="color:#c4b5fd; font-size:0.88rem;">Étape 2 — Adresse de réception (payout)</h3>
+                    <p style="font-size:0.7rem; color:var(--text-dim); line-height:1.5; margin:0 0 0.65rem;">
+                        <strong>Éphémère</strong> (recommandé) : nouvelle paire ; communiquez l’adresse à l’équipe avant <code style="font-size:0.65rem;">recordWelcomeAccount</code>. <strong>Ma clé</strong> : portefeuille existant (ex. MetaMask exporté localement). Le contrat enverra les GHOST sur l’adresse dérivée de cette clé une fois enregistrée.
+                    </p>
                         <div class="gas-mode-toggle" style="margin-bottom:0.65rem;">
                             <button type="button" class="gas-mode-btn btn-secondary" id="sendWelcomePayoutEphBtn" onclick="setWelcomePayoutKeyMode('ephemeral')">Éphémère</button>
                             <button type="button" class="gas-mode-btn active" id="sendWelcomePayoutOwnBtn" onclick="setWelcomePayoutKeyMode('own')">Ma clé</button>
                         </div>
                         <div id="sendWelcomePayoutEphWrap" class="hidden">
-                            <p style="font-size:0.68rem; color:var(--text-dim); margin-bottom:0.6rem;">
-                                Générez une paire, transmettez l’<strong>adresse</strong> à l’équipe <strong>avant</strong> qu’elle vous inscrive, conservez la clé pour ce jour-ci. Si vous êtes déjà inscrit sous une autre adresse (ex. MetaMask), utilisez <strong>Ma clé</strong>.
-                            </p>
                             <button type="button" class="btn btn-secondary" style="width:100%; margin-bottom:0.6rem;" onclick="generateWelcomeAirdropEphemeral()">&#9889; Générer un portefeuille éphémère</button>
                             <div id="sendWelcomeEphCard" class="hidden" style="background:rgba(0,0,0,0.25); border:1px solid rgba(167,139,250,0.3); border-radius:10px; padding:0.6rem 0.7rem; margin-bottom:0.75rem; font-size:0.7rem;">
-                                <div style="color:#c4b5fd; font-weight:600; margin-bottom:0.3rem;">Adresse enregistrée côté équipe</div>
+                                <div style="color:#c4b5fd; font-weight:600; margin-bottom:0.3rem;">Adresse payout (à transmettre au bridge / équipe)</div>
                                 <div style="font-family:var(--mono); word-break:break-all;" id="sendWelcomeEphAddr"></div>
                                 <div style="font-family:var(--mono); word-break:break-all; color:var(--text-dim); margin-top:0.35rem;" id="sendWelcomeEphPriv"></div>
-                                <div style="margin-top:0.45rem; color:var(--text-dim); font-size:0.65rem;">Prévoyez un peu d’ETH sur Base sur cette adresse pour payer les frais de la transaction de réception.</div>
+                                <div style="margin-top:0.45rem; color:var(--text-dim); font-size:0.65rem;">Conservez la clé pour signer le claim. Prévoyez un peu d’ETH sur Base pour les frais.</div>
                             </div>
                         </div>
                         <div id="sendWelcomePayoutOwnWrap">
                             <div class="password-wrapper">
                                 <input type="password" id="sendWelcomePayoutKeyInput" class="form-input" placeholder="0x suivi de 64 caractères hexadécimaux"
-                                    oninput="ensureAddrPrefix(this)" onfocus="prefillAddr(this)">
+                                    oninput="ensureAddrPrefix(this); if(typeof updateWelcomePayoutPreview==='function')updateWelcomePayoutPreview()" onfocus="prefillAddr(this)">
                                 <button type="button" class="eye-btn" onclick="toggleEye('sendWelcomePayoutKeyInput',this)" title="Afficher"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
                             </div>
-                            <small style="color:var(--text-dim); display:block; margin-top:0.35rem;">Clé de l’adresse Ethereum que l’équipe a associée à votre pseudo — pas une clé Ghost « cachée » dans l’app. Rien n’est enregistré ici après fermeture.</small>
+                            <div id="sendWelcomePayoutAddrPreview" class="derived-value hidden" style="margin-top:0.4rem;">Adresse payout dérivée : —</div>
+                            <small style="color:var(--text-dim); display:block; margin-top:0.35rem;">Adresse Ethereum classique (pas les secrets Ghost). Rien n’est stocké sur un serveur par cette page.</small>
                         </div>
+                    <div style="display:flex; flex-wrap:wrap; gap:0.45rem; margin-top:0.85rem;">
+                        <button type="button" id="sendWelcomeCopyRegistrationBtn" class="btn btn-secondary" style="flex:1; min-width:200px;">Copier demande pseudo + adresse (bridge)</button>
                     </div>
-                    <div style="display:flex; flex-wrap:wrap; gap:0.45rem;">
+                    <div style="display:flex; flex-wrap:wrap; gap:0.45rem; margin-top:0.55rem;">
                         <button type="button" id="sendWelcomeRefreshBtn" class="btn btn-secondary" style="flex:1; min-width:160px;">Actualiser mon statut</button>
                         <button type="button" id="sendWelcomeClaimBtn" class="btn btn-approve" style="flex:1; min-width:180px;">Recevoir mes 100 GHOST</button>
                     </div>
                     <pre id="sendWelcomeStatusPre" style="display:none; margin:0.75rem 0 0; padding:0.55rem 0.65rem; background:rgba(0,0,0,0.35); border-radius:8px; font-size:0.68rem; font-family:var(--mono); white-space:pre-wrap; word-break:break-all; color:var(--text-sec);"></pre>
                     <div id="sendWelcomeAirdropMsg" class="hidden" style="margin-top:0.75rem; white-space:pre-line; font-size:0.76rem;"></div>
+                </div>
                 </div>
             </div>
         </div>
@@ -3283,7 +3326,10 @@
                 void refreshPresaleBuyEthUiCaps();
                 scheduleRefreshSendPresaleV2Align();
             }
-            if (mode === 'welcome') refreshWelcomePseudoDisplay();
+            if (mode === 'welcome') {
+                refreshWelcomePseudoDisplay();
+                updateWelcomeAirdropSchnorrUi();
+            }
         }
 
         let presaleSendSub = 'external';
@@ -3294,6 +3340,59 @@
         /** Airdrop welcome : clé de signature = adresse enregistrée par l’admin (pas les clés Ghost chiffrées). */
         let welcomePayoutKeyMode = 'own';
         let welcomePayoutEphemeralWallet = null;
+        /** Schnorr validée dans l’UI pour cette session (étape 1) — débloque payout + claim / copie bridge. */
+        let welcomeAirdropIdentityVerified = false;
+
+        function updateWelcomeAirdropSchnorrUi() {
+            const post = document.getElementById('sendWelcomePostSchnorrBlock');
+            const okPanel = document.getElementById('sendWelcomeIdentityOkPanel');
+            const verifyBtn = document.getElementById('sendWelcomeVerifyIdentityBtn');
+            const sessBadge = document.getElementById('sendWelcomeSchnorrSessionBadge');
+            const manBlock = document.getElementById('sendWelcomeSchnorrManualBlock');
+            const useAuto = !!(autoFillSession && sessionPseudo2Keys && sessionKey2Keys && sessionKey1Keys && sessionPseudo1);
+            if (sessBadge) sessBadge.classList.toggle('hidden', !useAuto);
+            if (manBlock) manBlock.classList.toggle('hidden', useAuto);
+            if (post) post.classList.toggle('hidden', !welcomeAirdropIdentityVerified);
+            if (okPanel) okPanel.classList.toggle('hidden', !welcomeAirdropIdentityVerified);
+            if (verifyBtn) {
+                verifyBtn.classList.toggle('hidden', !!welcomeAirdropIdentityVerified);
+                verifyBtn.disabled = !sessionPseudo1;
+            }
+        }
+
+        function getWelcomePayoutAddressResolved() {
+            if (welcomePayoutKeyMode === 'ephemeral') {
+                if (!welcomePayoutEphemeralWallet) return null;
+                return welcomePayoutEphemeralWallet.address;
+            }
+            const k = (document.getElementById('sendWelcomePayoutKeyInput').value || '').trim();
+            if (!isValidEvmPrivKeyHex(k)) return null;
+            try {
+                return new ethers.Wallet(k).address;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function updateWelcomePayoutPreview() {
+            const el = document.getElementById('sendWelcomePayoutAddrPreview');
+            if (!el) return;
+            if (welcomePayoutKeyMode !== 'own') {
+                el.classList.add('hidden');
+                return;
+            }
+            const k = (document.getElementById('sendWelcomePayoutKeyInput').value || '').trim();
+            if (!isValidEvmPrivKeyHex(k)) {
+                el.classList.add('hidden');
+                return;
+            }
+            try {
+                el.textContent = 'Adresse payout dérivée : ' + new ethers.Wallet(k).address;
+                el.classList.remove('hidden');
+            } catch (e) {
+                el.classList.add('hidden');
+            }
+        }
 
         function setWelcomePayoutKeyMode(mode) {
             welcomePayoutKeyMode = mode;
@@ -3324,6 +3423,7 @@
                 if (ownWrap) ownWrap.classList.remove('hidden');
                 if (ephWrap) ephWrap.classList.add('hidden');
             }
+            updateWelcomePayoutPreview();
         }
 
         function generateWelcomeAirdropEphemeral() {
@@ -3335,6 +3435,8 @@
             if (a) a.textContent = w.address;
             if (p) p.textContent = w.privateKey;
             if (c) c.classList.remove('hidden');
+            const prev = document.getElementById('sendWelcomePayoutAddrPreview');
+            if (prev) prev.classList.add('hidden');
         }
 
         function getPresaleRpcUrl() {
@@ -3754,6 +3856,8 @@
             } else {
                 wel.textContent = '— Connectez-vous dans l’onglet Connexion —';
                 wel.style.color = 'rgba(148,163,184,0.95)';
+                welcomeAirdropIdentityVerified = false;
+                updateWelcomeAirdropSchnorrUi();
             }
         }
 
@@ -3914,6 +4018,41 @@
             );
             if (localCommit.toLowerCase() !== onchainCommit.toLowerCase()) {
                 throw new Error('Identifiants incorrects — pseudo2, key1 ou key2 ne correspondent pas au compte Ghost');
+            }
+            return { pseudo2: p2Keys, key1: k1Keys, key2: k2Keys };
+        }
+
+        /** Même logique que la prévente « compte connecté » : valide pseudo1 + triple engagement avant l’étape payout airdrop. */
+        async function resolveWelcomeAirdropGhostKeys() {
+            if (!sessionPseudo1) throw new Error('Connectez-vous dans l’onglet Connexion (pseudo Ghost requis).');
+            if (!contract) throw new Error('Contrat Ghost indisponible — configurez Connexion (RPC + adresse contrat).');
+            if (autoFillSession && sessionPseudo2Keys && sessionKey2Keys && sessionKey1Keys) {
+                const onchainCommit = await contract.pseudo1ToCommit(sessionPseudo1);
+                const localCommit = ethers.solidityPackedKeccak256(
+                    ['bytes32', 'bytes32', 'bytes32'],
+                    [sessionPseudo2Keys.commitment, sessionKey1Keys.commitment, sessionKey2Keys.commitment]
+                );
+                if (localCommit.toLowerCase() !== onchainCommit.toLowerCase()) {
+                    throw new Error('Session Schnorr non alignée sur la chaîne — reconnectez-vous.');
+                }
+                return { pseudo2: sessionPseudo2Keys, key1: sessionKey1Keys, key2: sessionKey2Keys };
+            }
+            const p2pass = (document.getElementById('sendWelcomeIdPseudo2').value || '').trim();
+            const k2pass = (document.getElementById('sendWelcomeIdKey2').value || '').trim();
+            const k1pass = (document.getElementById('sendWelcomeIdKey1').value || '').trim();
+            if (!p2pass) throw new Error('Pseudo2 (secret) requis');
+            if (!isValidEvmPrivKeyHex(k2pass)) throw new Error('Clé key2 requise (0x + 64 hex)');
+            if (!isValidEvmPrivKeyHex(k1pass)) throw new Error('Clé key1 requise (0x + 64 hex)');
+            const p2Keys = GhostSchnorr.deriveAll(p2pass);
+            const k2Keys = GhostSchnorr.deriveAll(k2pass);
+            const k1Keys = GhostSchnorr.deriveAll(k1pass);
+            const onchainCommit = await contract.pseudo1ToCommit(sessionPseudo1);
+            const localCommit = ethers.solidityPackedKeccak256(
+                ['bytes32', 'bytes32', 'bytes32'],
+                [p2Keys.commitment, k1Keys.commitment, k2Keys.commitment]
+            );
+            if (localCommit.toLowerCase() !== onchainCommit.toLowerCase()) {
+                throw new Error('Identifiants incorrects — pseudo2, key1 ou key2 ne correspondent pas à ce pseudo.');
             }
             return { pseudo2: p2Keys, key1: k1Keys, key2: k2Keys };
         }
@@ -4300,7 +4439,9 @@
             provider = null; contract = null;
             sessionPseudo1 = null; sessionPseudo2Keys = null; sessionKey2Keys = null;
             sessionKey1Keys = null; autoFillSession = false;
+            welcomeAirdropIdentityVerified = false;
             isListening = false;
+            try { updateWelcomeAirdropSchnorrUi(); } catch (e) {}
 
             if (ledgerState._transport) { try { await ledgerState._transport.close(); } catch {} }
             ledgerState.connected = false;
@@ -4448,7 +4589,9 @@
 
                 unlockTabs();
                 updateSendValidationMode();
+                welcomeAirdropIdentityVerified = false;
                 refreshSendPresalePseudoLine();
+                try { updateWelcomeAirdropSchnorrUi(); } catch (e) {}
                 scheduleRefreshSendPresaleV2Align();
 
                 const connectedHTML = name =>
@@ -6332,6 +6475,7 @@
             applyDefaultGhostPresaleAddress();
             applyDefaultGhostWelcomeRegistryAddress();
             refreshSendPresalePseudoLine();
+            try { updateWelcomeAirdropSchnorrUi(); } catch (e) {}
             scheduleRefreshSendPresaleV2Align();
         });
 
@@ -6722,6 +6866,69 @@
             }
         });
 
+        document.getElementById('sendWelcomeVerifyIdentityBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('sendWelcomeVerifyIdentityBtn');
+            try {
+                btn.disabled = true;
+                showWelcomeAirdropMsg('info', 'Vérification identité Ghost…');
+                await resolveWelcomeAirdropGhostKeys();
+                welcomeAirdropIdentityVerified = true;
+                updateWelcomeAirdropSchnorrUi();
+                showWelcomeAirdropMsg('success', 'Identité vérifiée. Indiquez votre adresse de réception (étape 2), puis actualisez ou réclamez.');
+            } catch (e) {
+                welcomeAirdropIdentityVerified = false;
+                updateWelcomeAirdropSchnorrUi();
+                showWelcomeAirdropMsg('error', 'Erreur : ' + (e.shortMessage || e.reason || e.message));
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('sendWelcomeResetIdentityBtn').addEventListener('click', () => {
+            welcomeAirdropIdentityVerified = false;
+            ['sendWelcomeIdPseudo2', 'sendWelcomeIdKey2', 'sendWelcomeIdKey1'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            updateWelcomeAirdropSchnorrUi();
+            showWelcomeAirdropMsg('info', 'Étape identité réinitialisée — validez à nouveau avant le payout.');
+        });
+
+        document.getElementById('sendWelcomeCopyRegistrationBtn').addEventListener('click', async () => {
+            try {
+                if (!welcomeAirdropIdentityVerified) {
+                    showWelcomeAirdropMsg('error', 'Validez d’abord l’étape 1 (identité Ghost).');
+                    return;
+                }
+                const pseudo1 = sessionPseudo1;
+                const payout = getWelcomePayoutAddressResolved();
+                const regRaw = document.getElementById('sendWelcomeRegistryInput').value.trim();
+                if (!pseudo1) throw new Error('Pseudo Ghost manquant.');
+                if (!payout) throw new Error('Choisissez une adresse : générez un éphémère ou saisissez une clé valide (Ma clé).');
+                if (!regRaw || !ethers.isAddress(regRaw)) throw new Error('Adresse du programme welcome invalide.');
+                const payload = {
+                    kind: 'ghost_welcome_payout_registration',
+                    version: 1,
+                    pseudo1,
+                    payout: ethers.getAddress(payout),
+                    welcomeRegistry: ethers.getAddress(regRaw),
+                    payoutMode: welcomePayoutKeyMode,
+                    identityVerifiedInApp: true,
+                    timestampIso: new Date().toISOString(),
+                };
+                const text = JSON.stringify(payload, null, 2);
+                try {
+                    await navigator.clipboard.writeText(text);
+                    showWelcomeAirdropMsg('success', 'Demande copiée dans le presse-papiers (pseudo + payout + contrat). Collez-la dans votre bridge / ticket équipe. Aucune clé privée incluse.');
+                } catch (clipErr) {
+                    prompt('Copiez ce JSON :', text);
+                    showWelcomeAirdropMsg('info', 'Presse-papiers indisponible — dialogue de secours.');
+                }
+            } catch (e) {
+                showWelcomeAirdropMsg('error', 'Erreur : ' + (e.shortMessage || e.reason || e.message));
+            }
+        });
+
         document.getElementById('sendWelcomeRefreshBtn').addEventListener('click', async () => {
             const btn = document.getElementById('sendWelcomeRefreshBtn');
             const regAddrRaw = document.getElementById('sendWelcomeRegistryInput').value.trim();
@@ -6729,6 +6936,7 @@
             const pre = document.getElementById('sendWelcomeStatusPre');
             const rpcUrl = getPresaleRpcUrl();
             try {
+                if (!welcomeAirdropIdentityVerified) throw new Error('Validez d’abord l’étape 1 — identité Ghost (Schnorr).');
                 if (!pseudo1) throw new Error('Connectez-vous dans l’onglet Connexion : votre pseudo Ghost est requis.');
                 if (!regAddrRaw || !ethers.isAddress(regAddrRaw)) throw new Error('Adresse du programme invalide.');
                 if (!rpcUrl) throw new Error('Réseau (RPC) manquant : renseignez-le dans Connexion.');
@@ -6810,6 +7018,7 @@
             }
             const rpcUrl = getPresaleRpcUrl();
             try {
+                if (!welcomeAirdropIdentityVerified) throw new Error('Validez d’abord l’étape 1 — identité Ghost (Schnorr).');
                 if (!pseudo1) throw new Error('Connectez-vous dans l’onglet Connexion pour continuer.');
                 if (!regAddrRaw || !ethers.isAddress(regAddrRaw)) throw new Error('Adresse du programme invalide.');
                 if (!rpcUrl) throw new Error('Réseau (RPC) manquant.');
@@ -7425,6 +7634,7 @@
         applyDefaultGhostPresaleAddress();
         applyDefaultGhostWelcomeRegistryAddress();
         refreshWelcomePseudoDisplay();
+        try { updateWelcomeAirdropSchnorrUi(); } catch (e) {}
 
         window.addEventListener('beforeunload', () => {
             localStorage.removeItem('ghost_pseudo1');
