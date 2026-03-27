@@ -6,9 +6,15 @@ on:
   pull_request:
     branches: [main, master]
 
+# Scripts npm : compile:token et test:token (avec un seul « n » dans token — pas compile:tokken).
+# checkout@v4 : tag officiel en minuscules (v4).
+
 jobs:
   compile:
     runs-on: ubuntu-latest
+    env:
+      # Redondant avec CI=true sur GHA ; renforce l’intention si le postinstall évolue.
+      SKIP_ELECTRON_POSTINSTALL: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

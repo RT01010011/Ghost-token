@@ -6,7 +6,7 @@
   "license": "MIT",
   "main": "main.js",
   "scripts": {
-    "postinstall": "electron-builder install-app-deps",
+    "postinstall": "node scripts/electron-postinstall.cjs",
     "start": "electron .",
     "rebuild": "electron-rebuild -f -w @ledgerhq/hw-transport-node-hid",
     "predist": "electron-builder install-app-deps",
