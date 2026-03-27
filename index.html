@@ -1704,6 +1704,7 @@
                         <strong>Airdrop welcome 100 GHOST</strong> — contrat <code style="font-size:0.68rem;">GhostPresaleWelcomeRegistry</code> (distinct de la prévente).<br>
                         L’équipe enregistre ton compte (<code>recordWelcomeAccount</code>) ; tu récupères les jetons avec <code>claim(pseudo1)</code> une fois <strong>claimOpensAt</strong> passé.<br>
                         <span style="display:block;margin-top:0.45rem;color:var(--text-dim);font-size:0.68rem;">Règles on-chain : <strong>msg.sender</strong> doit être l’adresse <strong>payout</strong> enregistrée ; le pseudo doit être exactement celui inscrit. Ce n’est <strong>pas</strong> le <code>claim()</code> de la prévente (achat ETH).</span>
+                        <span style="display:block;margin-top:0.4rem;color:rgba(167,139,250,0.95);font-size:0.68rem;"><strong>Pas de Schnorr ici</strong> : le smart contract n’attend aucune preuve Schnorr pour <code>claim</code> — seulement une transaction signée par le wallet <strong>payout</strong>. Les modes Connexion manuel / auto servent à préremplir le <strong>pseudo1</strong> (bouton ci‑dessous), pas à prouver l’identité on-chain pour ce contrat.</span>
                     </p>
                 </div>
                 <div class="card">
@@ -1719,7 +1720,7 @@
                     <div class="form-group">
                         <label class="form-label">Pseudo1 (compte Ghost)</label>
                         <input type="text" id="sendWelcomePseudo1Input" class="form-input" placeholder="Même pseudo public qu’à la création du compte">
-                        <button type="button" id="sendWelcomeFillPseudoBtn" class="btn btn-secondary" style="margin-top:0.45rem; font-size:0.72rem;">Utiliser le pseudo de la session Connexion</button>
+                        <button type="button" id="sendWelcomeFillPseudoBtn" class="btn btn-secondary" style="margin-top:0.45rem; font-size:0.72rem;">Remplir avec le pseudo1 de la session (auto ou manuel)</button>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Clé privée du wallet <strong>payout</strong></label>
@@ -1728,7 +1729,7 @@
                                 oninput="ensureAddrPrefix(this)" onfocus="prefillAddr(this)">
                             <button type="button" class="eye-btn" onclick="toggleEye('sendWelcomePayoutKeyInput',this)" title="Afficher"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
                         </div>
-                        <small style="color:var(--text-dim);">C’est ce portefeuille qui signe <code>claim()</code> et reçoit les GHOST.</small>
+                        <small style="color:var(--text-dim);">Ce portefeuille signe <code>claim()</code> (ethers.js / RPC réel) et reçoit les GHOST. Non prérempli : choix volontaire ; si l’admin t’a enregistré sur l’adresse de ta <strong>key1</strong>, utilise cette clé.</small>
                     </div>
                     <div style="display:flex; flex-wrap:wrap; gap:0.45rem;">
                         <button type="button" id="sendWelcomeRefreshBtn" class="btn btn-secondary" style="flex:1; min-width:160px;">Actualiser le statut (on-chain)</button>
@@ -6644,7 +6645,7 @@
             }
             const inp = document.getElementById('sendWelcomePseudo1Input');
             if (inp) inp.value = sessionPseudo1;
-            showWelcomeAirdropMsg('success', 'Pseudo renseigné depuis la session Connexion.');
+            showWelcomeAirdropMsg('success', 'Pseudo1 renseigné depuis la session (peu importe saisie auto ou manuelle à la connexion).');
         });
 
         document.getElementById('sendWelcomeRefreshBtn').addEventListener('click', async () => {
@@ -6731,7 +6732,8 @@
                 if (!rpcUrl) throw new Error('RPC manquant');
                 if (!isValidEvmPrivKeyHex(keyRaw)) throw new Error('Clé payout invalide (0x + 64 hex)');
                 btn.disabled = true;
-                showWelcomeAirdropMsg('info', 'Simulation claim(pseudo1) welcome…');
+                /** eth_call via ethers — même principe que claim() prévente : exécute le contrat sur le nœud sans envoyer de tx. */
+                showWelcomeAirdropMsg('info', 'Vérification à sec sur le nœud (eth_call / staticCall)…');
                 const regCA = ethers.getAddress(regAddrRaw);
                 const p = new ethers.JsonRpcProvider(rpcUrl);
                 const w = new ethers.Wallet(keyRaw, p);
@@ -6740,9 +6742,9 @@
                     await c.claim.staticCall(pseudo1, { gasLimit: 320000n });
                 } catch (simErr) {
                     const r = simErr.reason || simErr.revert?.args?.[0] || simErr.shortMessage || simErr.message || String(simErr);
-                    throw new Error('Simulation échouée — ' + r);
+                    throw new Error('Prévisualisation on-chain refusée — ' + r);
                 }
-                showWelcomeAirdropMsg('info', 'Envoi transaction welcome claim…');
+                showWelcomeAirdropMsg('info', 'Envoi de la transaction signée (claim)…');
                 const tx = await c.claim(pseudo1, { gasLimit: 320000n });
                 await tx.wait();
                 try { localStorage.setItem('ghost_welcome_registry_contract', regCA); } catch (e3) {}
