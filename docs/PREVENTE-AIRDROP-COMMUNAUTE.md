@@ -60,8 +60,8 @@ Module **`presaleBonus.ts`** : `computePresaleBonusCredentialId` aligné sur `Gh
 
 ### Visibilité on-chain (Ghost Protocol vs registre welcome)
 
-- Sur **Ghost Protocol V2**, l’état consultable pour l’airdrop est surtout **`pseudo1` → commit** (`pseudo1ToCommit`) et, si implémenté, **`accountCreatedAt(pseudo1)`**. Les secrets (pseudo2, key1, key2, signatures, scalaires) ne sont **pas** exposés comme tels dans l’état du protocole ; en revanche la **transaction** `createAccount` porte les **commits** en calldata (hashés, pas les secrets en clair).
-- Le contrat **`GhostPresaleWelcomeRegistry`** n’exige **aucune** signature ni scalaire : seulement **`pseudo1`** + lecture V2 + fenêtre prévente si `accountCreatedAt` est disponible. L’adresse **`payout`** est enregistrée sur **ce** contrat (visible sur l’explorateur pour le registre d’airdrop), ce qui est nécessaire pour envoyer les 100 GHOST ; ce n’est pas une donnée du cœur Ghost Protocol.
+- Sur **Ghost Protocol V2**, l’état consultable pour l’airdrop est surtout **`pseudo1` → commit** (`pseudo1ToCommit`) et **`getAccountInfo(pseudo1)`** → `(name, createdAt, active)` (contrat Base vérifié). Les secrets (pseudo2, key1, key2, signatures, scalaires) ne sont **pas** exposés comme tels dans l’état du protocole ; en revanche la **transaction** `createAccount` porte les **commits** en calldata (hashés, pas les secrets en clair).
+- Le contrat **`GhostPresaleWelcomeRegistry`** n’exige **aucune** signature ni scalaire : seulement **`pseudo1`** + lecture V2 + fenêtre prévente via **`createdAt`** retourné par **`getAccountInfo`**. L’adresse **`payout`** est enregistrée sur **ce** contrat (visible sur l’explorateur pour le registre d’airdrop), ce qui est nécessaire pour envoyer les 100 GHOST ; ce n’est pas une donnée du cœur Ghost Protocol.
 
 ---
 
@@ -74,7 +74,7 @@ L’onglet **Connexion** de l’application (`index.html`) reprend une synthèse
 ## 5. Premier airdrop — flux opérationnel
 
 1. **Indexation** : à partir des transactions `createAccount` sur Ghost Protocol V2 (SDK : `decodeCreateAccountFromTx` / `decodeCreateAccountFromReceipt`), filtrer les créations dont le timestamp est dans `[GhostPresale.startTime, GhostPresale.endTime]`.
-2. **Enregistrement** : l’**admin** du registre appelle `recordWelcomeAccount(pseudo1, payout)` (wallet qui recevra les 100 GHOST). Plafond `maxRecipients` (ex. 3 300). Le contrat vérifie que le compte existe sur V2 et, si `accountCreatedAt(pseudo1) > 0`, que la date est dans la fenêtre prévente.
+2. **Enregistrement** : l’**admin** du registre appelle `recordWelcomeAccount(pseudo1, payout)` (wallet qui recevra les 100 GHOST). Plafond `maxRecipients` (ex. 3 300). Le contrat vérifie que le compte existe sur V2 et, si **`createdAt` > 0** (via **`getAccountInfo`**), que la date est dans la fenêtre prévente.
 3. **Trésorerie** : approvisionner le contrat en GHOST depuis le **wallet airdrop** (enveloppe type 330 000 GHOST), hors distribution vesting.
 4. **Lancement** : après `claimOpensAt` (TGE / date fixée au déploiement), chaque `payout` appelle `claim(pseudo1)` pour recevoir `welcomeAmountWei` (ex. 100 GHOST).
 
