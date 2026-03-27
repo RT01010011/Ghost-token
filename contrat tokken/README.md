@@ -1,140 +1,54 @@
-# Contrats — référence déploiement
+# Contrats jeton GHOST
 
-Documentation **hors chaîne** : rôles des contrats et des fonctions. Les fichiers `.sol` sont réduits au code et au `SPDX-License-Identifier` pour la publication / vérification sur explorateur.
+Fichiers sources du token **GHOST** (Ghost Protocol) et mécanismes associés.
 
-Sources déployées via **[`../scripts/deploy-ghost-ecosystem.ts`](../scripts/deploy-ghost-ecosystem.ts)** (`npm run deploy:ecosystem:base` à la racine du dépôt).
-
-Ordre d’instanciation (aligné sur ce script) :
-
-| Ordre | Fichier | Contrat | Rôle |
-|------|---------|---------|------|
-| 1 | [`GhostToken.sol`](./GhostToken.sol) | `GhostToken` | ERC20 fixe 33 M GHOST ; mint unique vers le déployeur puis distribution. |
-| 2 | [`GhostVesting.sol`](./GhostVesting.sol) | `GhostVesting` ×2 | Vesting équipe et trésorerie. |
-| 3 | [`GhostTimelock.sol`](./GhostTimelock.sol) | `GhostTimelock` | Verrouillage de la tranche récompenses jusqu’à une date. |
-| 4 | [`GhostEthProceedsSplitter.sol`](./GhostEthProceedsSplitter.sol) | `GhostEthProceedsSplitter` | Réception des ETH au `finalize()` du presale ; ventilation par bps (somme 10 000). |
-| 5 | [`GhostPresale.sol`](./GhostPresale.sol) | `GhostPresale` | Prévente ETH → GHOST ; flux Schnorr via `GhostProtocolV2`. |
-| 6 | [`GhostPresaleBonusRegistry.sol`](./GhostPresaleBonusRegistry.sol) | `GhostPresaleBonusRegistry` | Registre d’éligibilité bonus post-`claim`. |
-
-Bibliothèque / interface (compilées avec le presale, pas déployées comme contrats autonomes à cette étape) :
+**→ Feuille de route complète de déploiement (tokenomics → transferts → prévente) :** [`FEUILLE-DE-ROUTE-DEPLOIEMENT.md`](./FEUILLE-DE-ROUTE-DEPLOIEMENT.md)  
+**→ Paramètres importés depuis un dossier type `GhostProtocolV2` (Téléchargements) :** [`PARAMETRES_IMPORTES_DOWNLOADS.md`](./PARAMETRES_IMPORTES_DOWNLOADS.md)  
+**→ Vérification interne (revue code + limites, pas audit cabinet) :** [`AUDIT_VERIFICATION_INTERNE.md`](./AUDIT_VERIFICATION_INTERNE.md)  
+**→ Schémas d’architecture, flux et checklist post-déploiement (Mermaid) :** [`ARCHITECTURE-SCHEMAS.md`](./ARCHITECTURE-SCHEMAS.md)  
+**→ Bilan des tests automatisés (jeton / prévente / SDK) pour GitHub :** [`../docs/TESTS-GHOST-TOKEN-PREVENTE.md`](../docs/TESTS-GHOST-TOKEN-PREVENTE.md)
 
 | Fichier | Rôle |
 |---------|------|
-| [`GhostVerifier.sol`](./GhostVerifier.sol) | Vérifications Schnorr BN256 ; hérité par `GhostPresale`. |
-| [`IGhostProtocolV2ForPresale.sol`](./IGhostProtocolV2ForPresale.sol) | Interface : `pseudo1ToCommit` sur le V2 déployé. |
-| `IGhostTokenPresaleCap` (dans [`GhostPresale.sol`](./GhostPresale.sol)) | Lecture de `PRIVATE_SALE_ALLOC()` sur le token au constructeur du presale. |
-| [`mocks/MockGhostProtocolV2ForPresale.sol`](./mocks/MockGhostProtocolV2ForPresale.sol) | Mock `pseudo1ToCommit` pour tests Hardhat / estimation gas — **pas** déployé en production. |
-| [`mocks/ReentrantRefundAttacker.sol`](./mocks/ReentrantRefundAttacker.sol) | Contrat de test uniquement : tentative de réentrance sur `refund()` — **pas** déployé en production. |
+| `GhostToken.sol` | ERC20 fixe **33 000 000 GHOST**, Permit, Votes — **source de vérité** pour les % et montants d’allocation. |
+| `GhostVesting.sol` | Vesting linéaire (équipe : cliff + durée ; trésorerie : linéaire selon déploiement). |
+| `GhostTimelock.sol` | Verrouillage jusqu’à une date (ex. tranche type `REWARDS_ALLOC`). |
+| `GhostPresale.sol` | Prévente ETH → GHOST (paramètres au déploiement). |
+| `GhostEthProceedsSplitter.sol` | Répartition des ETH au `finalize()` vers 5 wallets (bps). |
+| `GhostPresaleBonusRegistry.sol` | Éligibilité bonus % sur GHOST prévente + `credentialId` (couche externe). |
 
----
+### `GhostPresale` — lien `recipient` ↔ pseudo1 (achat Ghost)
 
-## `GhostToken.sol`
+Lors d’un **`buyTokensGhost`**, le contrat fixe **`ghostPurchasePseudo1Hash[recipient]`** à **`keccak256(bytes(pseudo1))`** (premier achat pour cette adresse). Les achats suivants pour le même **`recipient`** exigent le **même** `pseudo1`. **`remboursementVolontaire`** remet ce hash à zéro avec l’allocation. Achat **`buy` / `receive`** seul : le mapping reste à zéro pour cette adresse.
 
-| Élément | Fonction |
-|---------|----------|
-| Constantes `*_ALLOC` | Parts du supply (airdrop, trésorerie, équipe, récompenses, liquidité, prévente). |
-| `TOTAL_SUPPLY` | 33 000 000 × 10¹⁸ wei. |
-| `constructor` | Mint intégral vers `msg.sender` ; nom/symbole ; Permit + Votes. |
-| `_update` | Override ERC20 / ERC20Votes. |
-| `nonces` | Override ERC20Permit / Nonces. |
+### `GhostPresaleBonusRegistry` — pseudo1 et liste bonus
 
----
+Après **`claim`** sur le presale : **`recordEligibility(buyer)`** (adresse seule) ou **`recordEligibilityWithPseudo(buyer, pseudo1)`** — pour un achat Ghost, `pseudo1` doit coïncider avec **`ghostPurchasePseudo1Hash(buyer)`** sur le presale ; pour un achat wallet, passer **`""`**. Liste énumérable : **`pseudo1BonusListLength`** / **`pseudo1BonusListAt`**. Flux, événements et intégration : **[`BONUS-PREVENTE-REGISTRY.md`](./BONUS-PREVENTE-REGISTRY.md)**.
 
-## `GhostVesting.sol`
+## Déploiement (Hardhat)
 
-| Élément | Fonction |
-|---------|----------|
-| `token`, `beneficiary`, `start`, `cliff`, `duration`, `totalAmount` | Paramètres figés au déploiement. |
-| `released` | Cumul déjà libéré. |
-| `constructor` | Vérifie adresses et durées ; calcule `cliff = start + cliffDuration`. |
-| `release` | Transfère au `beneficiary` le montant libérable ; met à jour `released` avant transfert. |
-| `releasable` | `vestedAmount(now) - released`. |
-| `vestedAmount` | Linéaire après `cliff`, plafonné à `totalAmount`. |
-| `status` | Vue agrégée pour interfaces. |
+Ces fichiers sont compilés avec une **config séparée** du protocole escrow (dossier `contracts/`).
 
----
+1. Copier `.env.example` vers `.env` et renseigner les variables listées dans `.env.example` (clés et RPC — ne pas les committer).
+2. Compiler le jeton :
+   ```bash
+   npm run compile:token
+   ```
+3. Déployer **GhostToken** (tout le supply part sur l’adresse déployeur) :
+   ```bash
+   npm run deploy:token:baseSepolia
+   ```
+   ou en production Base :
+   ```bash
+   npm run deploy:token:base
+   ```
+4. Le script écrit `deployed-addresses-ghost-token.json` à la racine du dépôt (fichier gitignored).
 
-## `GhostTimelock.sol`
+Ensuite, selon la feuille de route : transferts vers multisig, déploiement de `GhostPresale` / `GhostVesting` / `GhostTimelock`, alimentation en GHOST, etc.
 
-| Élément | Fonction |
-|---------|----------|
-| `token`, `beneficiary`, `releaseTime` | Figés au déploiement. |
-| `constructor` | Exige `releaseTime` dans le futur. |
-| `release` | Uniquement `beneficiary`, après `releaseTime` ; retire tout le solde du contrat. |
-| `status` | Solde verrouillé, date, décompte. |
+## Cohérence avec le site vitrine
 
----
+Le tableau **tokenomics** du white paper (`website/js/config.js` → `tokenomics.allocations`) doit **reproduire** les constantes de `GhostToken.sol` (`AIRDROP_ALLOC`, `TREASURY_ALLOC`, etc.).  
+Si vous modifiez le contrat, **mettez à jour** `config.js` ensuite.
 
-## `GhostEthProceedsSplitter.sol`
-
-| Élément | Fonction |
-|---------|----------|
-| `_recipients`, `_bps` | Destinataires et parts (10 000 = 100 %). |
-| `constructor` | Vérifie longueurs, adresses non nulles, somme des bps = 10 000. |
-| `recipientCount` / `recipientAt` / `bpsAt` | Lecture publique. |
-| `receive` | Répartit `msg.value` selon les bps ; dernier slot reçoit le reliquat d’arrondi. |
-
----
-
-## `GhostPresale.sol`
-
-| Élément | Fonction |
-|---------|----------|
-| `ghostToken`, `admin`, `ethProceedsReceiver`, `ghostProtocolV2` | Adresses figées ; `ethProceedsReceiver` reçoit les ETH au `finalize`. |
-| `ghostPerEth`, caps, fenêtre | Taux et limites d’achat. |
-| `maxGhostAllocatable` | Lu depuis `GhostToken.PRIVATE_SALE_ALLOC()` au déploiement. |
-| `totalRaisedEth`, `totalTokensSold` | Compteurs globaux. |
-| `finalized`, `refundMode` | Phases post-prévente. |
-| `contributions`, `tokenAllocation`, `claimed`, `refunded` | État par acheteur (adresse EVM « classique »). |
-| `ghostPresaleNonceByPseudoHash`, `ghostClaimNonceByPseudoHash` | Anti-rejeu pour les flux Ghost. |
-| `allocationFromGhostPurchase` | Marque les allocations issues de `buyTokensGhost`. |
-| `receive` / `buy` / `buyTokens` | Achats classiques ; créditent `msg.sender`. |
-| `_buy` | Vérifie caps, plafond wallet, solde GHOST du contrat, plafond `maxGhostAllocatable`. |
-| `buyTokensGhost` | Vérifie commits vs `pseudo1ToCommit`, preuves Schnorr, puis `_buy(recipient, …)`. |
-| `finalize` | Admin ; soft cap OK ou fenêtre close + hard cap ; envoie les ETH au receiver. |
-| `enableRefundMode` | Si soft cap non atteint après la fin. |
-| `claim` | Retrait GHOST après finalisation (acheteur classique). |
-| `claimGhost` | Retrait avec preuves ; envoi vers `payout`. |
-| `refund` | Remboursement ETH en mode refund. |
-| `remboursementVolontaire` | Sortie volontaire pendant la prévente. |
-| `recoverUnsoldTokens` | Admin ; GHOST restants vers `admin`. |
-| `presaleInfo`, `buyerInfo`, `ethForGhost`, `ghostForEth` | Vues. |
-
----
-
-## `GhostPresaleBonusRegistry.sol`
-
-| Élément | Fonction |
-|---------|----------|
-| `IGhostPresaleForBonus` | Lecture `buyerInfo` sur le presale lié. |
-| `presale`, `bonusBps`, `credentialDomainSeparator` | Figés au déploiement. |
-| `registered`, `ghostPurchased`, `credentialBindingConsumed` | État par acheteur. |
-| `recordEligibility` | Enregistre si l’acheteur a contribué, claimé, et n’a pas été remboursé. |
-| `bonusGhostAmount` | Bonus en wei selon `bonusBps`. |
-| `credentialIdOf` | Empreinte publique pour indexation. |
-| `consumeCredentialBinding` | Usage unique du lien credential côté produit. |
-
----
-
-## `GhostVerifier.sol`
-
-| Élément | Fonction |
-|---------|----------|
-| `SchnorrProof` | Points et scalaire de preuve. |
-| `verifyGhostProof` | Vérifie la preuve Schnorr BN256 pour un commitment et un challenge. |
-| `_ecMul`, `_ecAdd` | Précompiles 0x07 / 0x06. |
-
----
-
-## `IGhostProtocolV2ForPresale.sol`
-
-| Élément | Fonction |
-|---------|----------|
-| `pseudo1ToCommit` | Commitment composite du compte Ghost pour un `pseudo1` donné. |
-
-Pour le détail d’implémentation ligne par ligne, se référer aux fichiers `.sol` ; ce README décrit les **responsabilités** et l’**ordre de déploiement**, pas une relecture exhaustive du source.
-
----
-
-## Contact (projet)
-
-**Rayane Hila** — **RayTech Solution** — [rayane.h42@proton.me](mailto:rayane.h42@proton.me) — sécurité : voir [`../SECURITY.md`](../SECURITY.md).
+Le site **protocole** ne détaille pas les produits communautaires ou « reward » à part : seule la part on-chain et les contrats y sont décrits de façon neutre.

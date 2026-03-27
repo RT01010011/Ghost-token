@@ -1,5 +1,18 @@
 /**
- * Jeton GHOST + prévente. Tests Hardhat dans `./tests` (voir `tests/README.md`).
+ * Configuration Hardhat — jeton GHOST + prévente (`contrat tokken/`).
+ * Ne compile pas GhostProtocolV2 (protocole escrow) : autre config si besoin.
+ *
+ * Usage :
+ *   npx hardhat compile --config hardhat-ghost-token.config.ts
+ *   npx hardhat test --config hardhat-ghost-token.config.ts
+ *   npx hardhat run scripts/deploy-ghost-token.ts --config hardhat-ghost-token.config.ts --network baseSepolia
+ *
+ * Fork Base (UX / comptes Ghost réels) :
+ *   Terminal 1 : npm run node:token:fork
+ *   Si `EADDRINUSE 127.0.0.1:8545` : npx hardhat node --config hardhat-ghost-token.config.ts --fork https://mainnet.base.org --port 8546
+ *   Terminal 2 : $env:HARDHAT_NODE_URL="http://127.0.0.1:8546" ; npm run deploy:presale:fork
+ *
+ * Voir `docs/PRESALE-E2E-TESTNET.md` et `docs/TESTS-GHOST-TOKEN-PREVENTE.md`.
  */
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
@@ -66,6 +79,9 @@ const config: HardhatUserConfig = {
     },
     gasReporter: {
         enabled: false,
+    },
+    mocha: {
+        reporter: process.env.HARDHAT_MOCHA_REPORTER || "spec",
     },
 };
 

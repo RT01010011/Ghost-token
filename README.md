@@ -2,6 +2,8 @@
 
 Compilation et déploiement du jeton **GHOST** et de l’écosystème associé sur **Base** (Hardhat, Solidity 0.8.28).
 
+**Référence déploiement mainnet** : travailler depuis ce dossier (`dépôt tokken` sur le Bureau). Une copie de travail peut exister ailleurs (ex. dépôt « Ghost Protocol V2 ») : resynchroniser les contrats et `scripts/deploy-ghost-ecosystem.ts` ici avant tout `npm run deploy:ecosystem:base`.
+
 ## Tokenomics (référence)
 
 | Tranche | GHOST | % du supply 33 M |
@@ -29,6 +31,9 @@ Détail des titulaires, Git et contact : [`docs/TITULAIRE-LICENCE.md`](docs/TITU
 ## Documentation
 
 - [Tokenomics et flux on-chain](docs/TOKENOMICS.md)
+- [Prévente, registre bonus +5 % et campagne airdrop 100 GHOST](docs/PREVENTE-AIRDROP-COMMUNAUTE.md)
+- [Prévente — lien déploiement ↔ SDK (FR/EN)](docs/PRESALE-DEPLOYMENT-SDK-LINK.md)
+- [Notes pré-GitHub / synchro contrats–SDK (bilingue)](docs/PRE-GITHUB-DEV-NOTES.md)
 - [Structure du dépôt et variables d’environnement](docs/STRUCTURE-ET-DEPLOIEMENT.md)
 - [Contrats Solidity — rôles et déploiement](contrat%20tokken/README.md)
 - [Publication sur GitHub (remote, push)](docs/GITHUB-PUBLICATION.md)
@@ -38,6 +43,7 @@ Détail des titulaires, Git et contact : [`docs/TITULAIRE-LICENCE.md`](docs/TITU
 - [Contribuer](CONTRIBUTING.md)
 - [Audits externes (statut)](audits/README.md)
 - [Tests Hardhat](tests/README.md)
+- [SDK & intégration plateforme (Ghost Protocol)](sdk/README.md)
 
 ## Prérequis
 
@@ -58,11 +64,11 @@ npm run test:token
 npm run estimate:deploy:gas
 ```
 
-La suite **183 tests** Hardhat couvre le token, la prévente, le splitter, le registre bonus et la cohérence Schnorr (`ghost-schnorr-libz.js`). Détail : [`tests/README.md`](tests/README.md). Sur Windows en cas de manque mémoire : `NODE_OPTIONS=--max-old-space-size=8192` avant `npm run test:token`.
+La suite **~224 tests** Hardhat couvre le token, la prévente, le splitter, les registres bonus / welcome, la cohérence SDK et Schnorr (`ghost-schnorr-libz.js`). Détail : [`tests/README.md`](tests/README.md). Rapport JSON : `npm run test:token:json`. Sur Windows en cas de manque mémoire : `NODE_OPTIONS=--max-old-space-size=8192` avant `npm run test:token`.
 
 ## Audits externes
 
-Statut et feuille de route : [`audits/README.md`](audits/README.md). Aucun rapport d’audit tiers n’est publié dans ce dossier pour l’instant ; le code est couvert par une **suite de tests Hardhat** (183 scénarios) et une documentation on-chain détaillée.
+Statut et feuille de route : [`audits/README.md`](audits/README.md). Aucun rapport d’audit tiers n’est publié dans ce dossier pour l’instant ; le code est couvert par une **suite de tests Hardhat** (~224 scénarios) et une documentation on-chain détaillée.
 
 ## International
 
@@ -80,6 +86,14 @@ Les adresses déployées sont écrites dans `deployed-addresses-ghost-ecosystem.
 
 **Avant un déploiement mainnet** : vérifier `.env` (wallets, `GHOST_PRESALE_*`, `GHOST_PROTOCOL_V2`) et lancer `npm run compile:token` ; voir aussi la fin de [`docs/TOKENOMICS.md`](docs/TOKENOMICS.md).
 
+## Prévente GHOST : soft cap, finalisation et UX
+
+Documentation **produit / dev** (ne pas dupliquer en commentaires dans `index.html` ou les scripts ; maintenir ici).
+
+- **`GHOST_PRESALE_SOFT_CAP_ETH=0`** est la valeur standard (voir [`.env.example`](.env.example)). Dans `GhostPresale`, si `softCapEth` est nul, **`finalize()`** n’impose aucun plancher de levée globale : même une petite partie du hard cap vendue (par ex. 5 %) permet, après `endTime`, de finaliser et de distribuer les **jetons** aux contributeurs au prorata — ce n’est pas un scénario « seuil minimum non atteint = remboursement collectif ».
+- Les fonctions **`enableRefundMode()`** et **`refund()`** du contrat ne sont pertinentes que pour un déploiement avec **soft cap strictement positif** et une levée **restée sous** ce seuil ; avec soft cap à 0, `enableRefundMode()` revert toujours.
+- L’**UX** (`index.html`) n’expose que le **remboursement volontaire** pendant la fenêtre d’achat (`remboursementVolontaire`), pas de bouton « remboursement soft cap », ce qui correspond à cette configuration.
+
 ## Sécurité
 
 - Ne jamais committer `.env`, clés privées ni secrets RPC.
@@ -89,6 +103,10 @@ Les adresses déployées sont écrites dans `deployed-addresses-ghost-ecosystem.
 ## Contact
 
 **Rayane Hila** — **RayTech Solution** — [rayane.h42@proton.me](mailto:rayane.h42@proton.me) (questions générales ; pour les failles de sécurité, voir [SECURITY.md](SECURITY.md)).
+
+## English (short overview)
+
+**GHOST** ERC-20, **presale**, **+5 % bonus registry**, **100 GHOST welcome airdrop** registry, Hardhat deploy for **Base**, **TypeScript SDK** and **unified JS**. Deployment ↔ SDK map and bilingual pre-release checklist: [`docs/PRESALE-DEPLOYMENT-SDK-LINK.md`](docs/PRESALE-DEPLOYMENT-SDK-LINK.md), [`docs/PRE-GITHUB-DEV-NOTES.md`](docs/PRE-GITHUB-DEV-NOTES.md).
 
 ## Licence
 

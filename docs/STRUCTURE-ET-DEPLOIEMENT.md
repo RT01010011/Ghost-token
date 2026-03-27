@@ -24,7 +24,7 @@ dépôt tokken/
 │   ├── deploy-ghost-token.ts      # Déploiement GhostToken seul + vérif optionnelle
 │   └── estimate-ghost-deploy-gas.ts # Estimation gas en réseau Hardhat local
 ├── tests/
-│   ├── README.md                  # Suite Hardhat (183 scénarios)
+│   ├── README.md                  # Suite Hardhat (220 scénarios)
 │   ├── helpers/                   # presaleBonus (aligné registre bonus)
 │   └── *.test.ts                  # Token, prévente, sécurité, cohérence Schnorr
 ├── audits/

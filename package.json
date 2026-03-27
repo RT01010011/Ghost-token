@@ -1,34 +1,132 @@
 {
-  "name": "depot-ghost-tokken",
-  "version": "1.0.0",
-  "private": true,
-  "author": "Rayane Hila <rayane.h42@proton.me> (RayTech Solution)",
+  "name": "ghost-protocol-v2",
+  "version": "2.0.0",
+  "description": "Ghost Protocol V2 — Schnorr BN254 Anonymous Escrow",
+  "author": "Rayane Hila - RayTech R&D",
   "license": "MIT",
-  "description": "Dépot ghost tokken — jeton GHOST et prévente (Hardhat, Base)",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/RT01010011/Ghost-token.git"
-  },
-  "bugs": {
-    "url": "https://github.com/RT01010011/Ghost-token/issues"
-  },
-  "homepage": "https://github.com/RT01010011/Ghost-token#readme",
+  "main": "main.js",
   "scripts": {
+    "postinstall": "electron-builder install-app-deps",
+    "start": "electron .",
+    "rebuild": "electron-rebuild -f -w @ledgerhq/hw-transport-node-hid",
+    "predist": "electron-builder install-app-deps",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder install-app-deps && electron-builder --win",
+    "dist:mac": "electron-builder install-app-deps && electron-builder --mac",
+    "dist:linux": "electron-builder install-app-deps && electron-builder --linux",
     "compile:token": "hardhat compile --config hardhat-ghost-token.config.ts",
-    "test:token": "hardhat test --config hardhat-ghost-token.config.ts",
     "estimate:deploy:gas": "hardhat run scripts/estimate-ghost-deploy-gas.ts --config hardhat-ghost-token.config.ts",
+    "node:token": "hardhat node --config hardhat-ghost-token.config.ts",
+    "node:token:fork": "hardhat node --config hardhat-ghost-token.config.ts --fork https://mainnet.base.org",
+    "deploy:presale:local": "hardhat run scripts/deploy-presale-local-ux.ts --config hardhat-ghost-token.config.ts --network localhost",
+    "deploy:presale:fork": "hardhat run scripts/deploy-presale-fork-base-ux.ts --config hardhat-ghost-token.config.ts --network localhost",
+    "deploy:presale:e2e:sepolia": "hardhat run scripts/deploy-presale-e2e-testnet.ts --config hardhat-ghost-token.config.ts --network baseSepolia",
+    "register:mock-presale:sepolia": "hardhat run scripts/register-mock-presale-account.ts --config hardhat-ghost-token.config.ts --network baseSepolia",
+    "test:token": "hardhat test --config hardhat-ghost-token.config.ts",
+    "test:token:json": "node scripts/export-hardhat-test-json.cjs",
+    "test:token:sdk-coherence": "hardhat test --config hardhat-ghost-token.config.ts tests/PresaleSdkCoherence.test.ts",
+    "verify:presale:sans-eth": "npm run compile:token && npm run test:token:sdk-coherence",
+    "build:sdk": "cd sdk && npm install && npm run build",
+    "test:sdk-unified": "node --test test-node/ghost-sdk-unified.test.cjs",
     "deploy:token:base": "hardhat run scripts/deploy-ghost-token.ts --config hardhat-ghost-token.config.ts --network base",
     "deploy:token:baseSepolia": "hardhat run scripts/deploy-ghost-token.ts --config hardhat-ghost-token.config.ts --network baseSepolia",
     "deploy:ecosystem:base": "hardhat run scripts/deploy-ghost-ecosystem.ts --config hardhat-ghost-token.config.ts --network base",
     "deploy:ecosystem:baseSepolia": "hardhat run scripts/deploy-ghost-ecosystem.ts --config hardhat-ghost-token.config.ts --network baseSepolia"
   },
+  "dependencies": {
+    "@ledgerhq/hw-app-eth": "^7.5.0",
+    "@ledgerhq/hw-transport-node-hid": "^6.31.0",
+    "ethers": "^6.16.0"
+  },
   "devDependencies": {
+    "@electron/rebuild": "^4.0.3",
+    "@noble/curves": "^1.7.0",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@openzeppelin/contracts": "^5.0.1",
     "@types/node": "^20.11.0",
     "dotenv": "^16.3.1",
+    "electron": "^28.3.3",
+    "electron-builder": "^25.1.8",
     "hardhat": "^2.19.4",
+    "rcedit": "^5.0.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "build": {
+    "afterPack": "./scripts/electron-after-pack.cjs",
+    "appId": "com.ghostprotocol.v2",
+    "productName": "Ghost Protocol V2",
+    "copyright": "Copyright © Rayane Hila - RayTech R&D",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!contrat tokken/**",
+      "!tests/**",
+      "!test-node/**",
+      "!cache/**",
+      "!cache-ghost-token/**",
+      "!artifacts/**",
+      "!artifacts-ghost-token/**",
+      "!typechain-types/**",
+      "!docs/**",
+      "!audits/**",
+      "!scripts/**",
+      "!dist/**",
+      "!.github/**",
+      "!slither*.json",
+      "!slither*.log"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "assets/ghost_logo.ico",
+      "node_modules/@ledgerhq/hw-transport-node-hid/**/*",
+      "node_modules/node-hid/**/*",
+      "node_modules/usb/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/ghost_logo.ico",
+      "signAndEditExecutable": false
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "assets/github_readme_preview.png",
+      "category": "public.app-category.finance"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "assets/github_readme_preview.png",
+      "category": "Office"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/ghost_logo.ico",
+      "uninstallerIcon": "assets/ghost_logo.ico",
+      "installerHeaderIcon": "assets/ghost_logo.ico"
+    }
   }
 }

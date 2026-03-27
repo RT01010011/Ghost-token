@@ -50,7 +50,7 @@ Défaut du script si `GHOST_ETH_SPLIT_BPS` est absent : **2352 / 2117 / 2000 / 2
 
 ## Prévente GHOST (paramètres opérationnels)
 
-Fixés par variables d’environnement au déploiement (voir [`.env.example`](../.env.example) et [`STRUCTURE-ET-DEPLOIEMENT.md`](./STRUCTURE-ET-DEPLOIEMENT.md)) : taux `GHOST_PER_ETH_GHOST`, soft / hard cap en ETH, plafond par wallet, fenêtres `GHOST_PRESALE_START_UNIX` / `GHOST_PRESALE_END_UNIX`, adresse `GHOST_PROTOCOL_V2` pour les achats via `buyTokensGhost`. L’API détaillée des fonctions : [`contrat tokken/README.md`](../contrat%20tokken/README.md).
+Fixés par variables d’environnement au déploiement (voir [`.env.example`](../.env.example) et [`STRUCTURE-ET-DEPLOIEMENT.md`](./STRUCTURE-ET-DEPLOIEMENT.md)) : taux `GHOST_PER_ETH_GHOST`, **soft / hard cap en ETH** (plafond **global** de la collecte), **plafond par wallet** (contribution **max par adresse**), fenêtres `GHOST_PRESALE_START_UNIX` / `GHOST_PRESALE_END_UNIX`, adresse `GHOST_PROTOCOL_V2` pour les achats via `buyTokensGhost`. Le contrat limite aussi les GHOST vendus à `PRIVATE_SALE_ALLOC` (4,95 M) : avec le taux par défaut **212 000 GHOST / ETH**, l’épuisement théorique des jetons correspond à environ **23,35 ETH** collectés — le hard cap doit donc rester **au moins égal** à ce niveau si tu veux pouvoir écouler toute la tranche prévente. L’API détaillée des fonctions : [`contrat tokken/README.md`](../contrat%20tokken/README.md).
 
 ## Rappel avant déploiement mainnet
 

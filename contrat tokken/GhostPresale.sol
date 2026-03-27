@@ -12,6 +12,10 @@ interface IGhostTokenPresaleCap {
     function PRIVATE_SALE_ALLOC() external view returns (uint256);
 }
 
+/**
+ * @title GhostPresale
+ * @notice Prévente GHOST contre ETH : achat classique, achat via preuves Ghost (`buyTokensGhost`), `claim` / `claimGhost`, finalisation et remboursements.
+ */
 contract GhostPresale is GhostVerifier, ReentrancyGuard {
 
     using SafeERC20 for IERC20;
@@ -43,6 +47,7 @@ contract GhostPresale is GhostVerifier, ReentrancyGuard {
     mapping(bytes32 => uint256) public ghostPresaleNonceByPseudoHash;
     mapping(bytes32 => uint256) public ghostClaimNonceByPseudoHash;
     mapping(address => bool)    public allocationFromGhostPurchase;
+    mapping(address => bytes32) public ghostPurchasePseudo1Hash;
 
     event Purchase(address indexed buyer, uint256 ethAmount, uint256 ghostAmount);
     event PurchaseViaGhostProtocol(
@@ -153,6 +158,9 @@ contract GhostPresale is GhostVerifier, ReentrancyGuard {
         emit Purchase(buyer, ethAmount, ghostAmount);
     }
 
+    /**
+     * @notice Achat avec preuves Schnorr ; crédite `recipient`. Les commits doivent correspondre à `pseudo1ToCommit(pseudo1)` sur le V2.
+     */
     function buyTokensGhost(
         string    calldata pseudo1,
         address            recipient,
@@ -212,6 +220,13 @@ contract GhostPresale is GhostVerifier, ReentrancyGuard {
             verifyGhostProof(key1Commit, proofKey1, cK1),
             "GhostPresale: preuve key1 invalide"
         );
+
+        bytes32 bound = ghostPurchasePseudo1Hash[recipient];
+        if (bound == bytes32(0)) {
+            ghostPurchasePseudo1Hash[recipient] = pseudoHash;
+        } else {
+            require(bound == pseudoHash, "GhostPresale: pseudo1 mismatch recipient");
+        }
 
         ghostPresaleNonceByPseudoHash[pseudoHash] = n + 1;
 
@@ -368,6 +383,7 @@ contract GhostPresale is GhostVerifier, ReentrancyGuard {
         totalRaisedEth              -= ethAmount;
         totalTokensSold             -= ghostAmount;
         allocationFromGhostPurchase[msg.sender] = false;
+        ghostPurchasePseudo1Hash[msg.sender]    = bytes32(0);
 
         emit ContributionWithdrawn(msg.sender, ethAmount, ghostAmount);
 

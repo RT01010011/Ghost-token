@@ -113,4 +113,20 @@ describe("GhostPresaleBonusRegistry", function () {
             "GhostPresaleBonusRegistry__NotRegistered"
         );
     });
+
+    it("recordEligibilityWithPseudo : achat wallet — pseudo1 doit être vide", async function () {
+        const { presale, registry, admin, buyer1, start, end } = await loadFixture(fx);
+        await time.setNextBlockTimestamp(Number(start + 1n));
+        await presale.connect(buyer1).buy({ value: ethers.parseEther("1") });
+        await time.setNextBlockTimestamp(Number(end + 1n));
+        await presale.connect(admin).finalize();
+        await presale.connect(buyer1).claim();
+
+        await expect(
+            registry.recordEligibilityWithPseudo(buyer1.address, "nimporte")
+        ).to.be.revertedWithCustomError(registry, "GhostPresaleBonusRegistry__PseudoMustBeEmpty");
+
+        await registry.recordEligibilityWithPseudo(buyer1.address, "");
+        expect(await registry.registered(buyer1.address)).to.equal(true);
+    });
 });

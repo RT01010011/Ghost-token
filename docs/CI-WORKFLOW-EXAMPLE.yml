@@ -1,0 +1,30 @@
+# Copier ce fichier vers `.github/workflows/ci.yml` quand ton authentification Git le permet :
+# - PAT classique avec scope « workflow », ou
+# - push via SSH (git@github.com:...), ou
+# - création du fichier depuis l’interface GitHub (bouton Add file).
+#
+# Contenu identique à l’ancien workflow retiré pour éviter l’erreur :
+# « refusing to allow a Personal Access Token ... without workflow scope »
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run compile:token
+      - run: npm run test:token
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192

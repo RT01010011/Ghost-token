@@ -1,3 +1,48 @@
+/**
+ * Déploiement complet Phase 1 — GhostToken + GhostVesting (×2) + GhostTimelock + GhostPresale + transferts tokenomics.
+ *
+ * Aligné sur `contrat tokken/FEUILLE-DE-ROUTE-DEPLOIEMENT.md` et paramètres importés depuis
+ * `contrat tokken/PARAMETRES_IMPORTES_DOWNLOADS.md` (script d’origine : GhostProtocolV2 / deploy-ghost-token.ts).
+ *
+ * Commande :
+ *   npx hardhat run scripts/deploy-ghost-ecosystem.ts --config hardhat-ghost-token.config.ts --network base
+ *
+ * Prérequis : `.env` avec PRIVATE_KEY, BASE_RPC_URL, BASESCAN_API_KEY (pour vérif manuelle si besoin).
+ *
+ * Surcharges optionnelles (variables d’environnement) :
+ *   GHOST_WALLET_AIRDROP, GHOST_WALLET_TREASURY_VESTING, GHOST_WALLET_TEAM_VESTING,
+ *   GHOST_WALLET_REWARDS_TIMELOCK, GHOST_WALLET_LIQUIDITY, GHOST_PRESALE_ADMIN
+ *   GHOST_PER_ETH_GHOST (ex. 212000), GHOST_PRESALE_SOFT_CAP_ETH, GHOST_PRESALE_HARD_CAP_ETH,
+ *   GHOST_PRESALE_MAX_ETH_PER_WALLET (anti-whale, > 0 obligatoire),
+ *   GHOST_PRESALE_START_UNIX, GHOST_PRESALE_END_UNIX (les deux ensemble ; sinon mode auto ci-dessous).
+ *     Réf. prévente cible : START=1774573800 (ven. 27 mars 2026 02:10 Europe/Paris CET), END=1775178600 (= START + 604800 s, 7 j exacts) — identique à `.env.example`.
+ *   GHOST_PRESALE_START_DELAY_SECONDS (défaut 172 800 = 48 h après l’heure chaîne au déploiement si pas de START/END)
+ *   GHOST_PRESALE_DURATION_SECONDS (défaut 604 800 = 7 jours de fenêtre prévente)
+ *   GHOST_REWARDS_LOCK_SECONDS (défaut : 31536000 = 365 j)
+ *   GHOST_ETH_SPLIT_BPS (optionnel) : 5 entiers, somme = 10_000 — ordre [AIRDROP, TREASURY, TEAM, REWARDS, LIQUIDITY].
+ *     Défaut = ratios 20:18:17:20:10 sur le pot ETH (somme des poids 85, pas 100 % du supply) → 2352,2117,2000,2352,1179.
+ *   GHOST_PRESALE_BONUS_BPS (défaut 500) : bonus « rendement » sur GHOST achetés en prévente (GhostPresaleBonusRegistry).
+ *   GHOST_BONUS_CREDENTIAL_DOMAIN (optionnel) : bytes32 hex 0x… ; sinon keccak256("GhostPresaleBonusRegistry.v1").
+ *   GHOST_PROTOCOL_V2 (obligatoire) : adresse du contrat GhostProtocolV2 déployé (pseudo1ToCommit pour buyTokensGhost ; les commits Schnorr sont passés en calldata par l’appelant).
+ *
+ * Séparation déployeur / tokenomics (recommandé prod) :
+ *   - Le compte PRIVATE_KEY ne doit PAS être admin prévente ni bénéficiaire des tranches : le script
+ *     vérifie que le déployeur ≠ GHOST_PRESALE_ADMIN, GHOST_WALLET_TREASURY_VESTING, etc.
+ *   - Les ETH levés au finalize() vont vers GhostEthProceedsSplitter puis sont répartis vers les 5 wallets
+ *     tokenomics (mêmes adresses que les tranches GHOST hors prévente). L’admin prévente (GHOST_PRESALE_ADMIN)
+ *     garde les droits finalize / refund / recover, sans recevoir directement tout le pot ETH.
+ *   - La tranche GHOST « trésorerie 18 % » va au vesting dont le beneficiary est GHOST_WALLET_TREASURY_VESTING
+ *     (souvent le même multisig que l’admin prévente, mais jamais le wallet éphémère de déploiement).
+ *   Surcharge non production : GHOST_SKIP_DEPLOYER_SEPARATION_CHECKS=1 — voir docs/PRE-GITHUB-DEV-NOTES.md.
+ *
+ * Cohérence GhostPresale ↔ GhostToken :
+ *   Le presale est toujours déployé avec l’adresse du GhostToken créé à l’étape 1 (`tokenAddr`).
+ *   Le constructeur lit `PRIVATE_SALE_ALLOC()` sur ce token pour `maxGhostAllocatable` (plafond 15 %).
+ *   Ne pas brancher un autre ERC20 : le déploiement échouerait ou le plafond serait incohérent.
+ *
+ * GhostPresale (`contrat tokken/GhostPresale.sol`) : achat receive/buy/buyTokens, buyTokensGhost, remboursementVolontaire, finalize, claim/claimGhost ; admin finalize, enableRefundMode, recoverUnsoldTokens. Soft cap, finalisation partielle et choix UX : voir README racine (section Prévente GHOST).
+ */
+
 import { ethers } from "hardhat";
 import * as fs from "fs";
 import * as path from "path";
@@ -20,54 +65,12 @@ function eqAddr(a: string, b: string): boolean {
     return a.toLowerCase() === b.toLowerCase();
 }
 
-const ADDR_ZERO = "0x0000000000000000000000000000000000000000";
-
-/** Obligatoire sur Base mainnet / Sepolia : aucune adresse réelle par défaut dans le dépôt public. */
-function requireEnvAddr(key: string): string {
-    const v = process.env[key]?.trim();
-    if (!v || !/^0x[a-fA-F0-9]{40}$/.test(v)) {
-        throw new Error(
-            `${key} manquant ou invalide dans .env (obligatoire sur Base mainnet / Sepolia). Voir .env.example.`
-        );
-    }
-    if (v.toLowerCase() === ADDR_ZERO) {
-        throw new Error(`${key} ne peut pas être l'adresse zéro.`);
-    }
-    return v;
-}
-
 /**
- * Base (8453 / 84532) : toutes les adresses viennent du .env.
- * Hardhat local (31337) : repli de développement uniquement (ne pas utiliser en production).
+ * Basis points pour GhostEthProceedsSplitter : ordre AIRDROP, TREASURY, TEAM, REWARDS, LIQUIDITY.
+ * Défaut : poids tokenomics hors prévente 20+18+17+20+10 = 85 → bps_i ≈ floor(w_i×10_000/85),
+ * dernier slot = reliquat pour somme exacte 10_000. La trésorerie (18 % du *supply* GHOST) reçoit
+ * 18/85 du *pot ETH*, pas 1800 bps (18 %) du pot — sinon les 5 parts ne reproduiraient pas les ratios 20:18:17:20:10.
  */
-function buildWallets(chainId: bigint): {
-    AIRDROP: string;
-    TREASURY: string;
-    TEAM: string;
-    REWARDS: string;
-    LIQUIDITY: string;
-    PRESALE_ADMIN: string;
-} {
-    if (chainId === 8453n || chainId === 84532n) {
-        return {
-            AIRDROP: requireEnvAddr("GHOST_WALLET_AIRDROP"),
-            TREASURY: requireEnvAddr("GHOST_WALLET_TREASURY_VESTING"),
-            TEAM: requireEnvAddr("GHOST_WALLET_TEAM_VESTING"),
-            REWARDS: requireEnvAddr("GHOST_WALLET_REWARDS_TIMELOCK"),
-            LIQUIDITY: requireEnvAddr("GHOST_WALLET_LIQUIDITY"),
-            PRESALE_ADMIN: requireEnvAddr("GHOST_PRESALE_ADMIN"),
-        };
-    }
-    return {
-        AIRDROP: addr("GHOST_WALLET_AIRDROP", "0x9D5DB811b409E6EcCE8B097093e719bfc5430f9a"),
-        TREASURY: addr("GHOST_WALLET_TREASURY_VESTING", "0xaB37b96A7653bE7Cb8Fb5DaCDcDda0EfC42EbcA4"),
-        TEAM: addr("GHOST_WALLET_TEAM_VESTING", "0xed7c344bAF2950Ba217CAb2279c400a830e6dD50"),
-        REWARDS: addr("GHOST_WALLET_REWARDS_TIMELOCK", "0x425F84c4adC84ce62A459610BD87A051A96c3c56"),
-        LIQUIDITY: addr("GHOST_WALLET_LIQUIDITY", "0x7926a4d86A77642Ecd0bc3fD651282187333E4a6"),
-        PRESALE_ADMIN: addr("GHOST_PRESALE_ADMIN", "0xed7c344bAF2950Ba217CAb2279c400a830e6dD50"),
-    };
-}
-
 function parseEthSplitBps(): number[] {
     const raw = process.env.GHOST_ETH_SPLIT_BPS?.trim();
     const defaultBps = [2352, 2117, 2000, 2352, 1179];
@@ -92,6 +95,11 @@ function parseEthSplitBps(): number[] {
     return out;
 }
 
+/**
+ * Évite qu’un wallet de déploiement garde un pouvoir on-chain ou concentre les fonds :
+ * GhostToken n’a pas d’owner, mais le déployeur reçoit tout le supply avant distribution ;
+ * GhostPresale envoie les ETH au splitter (pas au déployeur).
+ */
 function assertDeployerSeparatedFromTokenomicsWallets(
     deployer: string,
     wallets: {
@@ -104,7 +112,7 @@ function assertDeployerSeparatedFromTokenomicsWallets(
     }
 ): void {
     if (process.env.GHOST_SKIP_DEPLOYER_SEPARATION_CHECKS === "1" || process.env.GHOST_SKIP_DEPLOYER_SEPARATION_CHECKS === "true") {
-        console.warn("[WARN] GHOST_SKIP_DEPLOYER_SEPARATION_CHECKS actif — vérifications déployeur / wallets désactivées.\n");
+        console.warn("⚠️  GHOST_SKIP_DEPLOYER_SEPARATION_CHECKS actif — vérifications déployeur / wallets désactivées.\n");
         return;
     }
 
@@ -132,27 +140,25 @@ async function main() {
     const [deployer] = await ethers.getSigners();
     const network = await ethers.provider.getNetwork();
     const latest = await ethers.provider.getBlock("latest");
+    /** Heure « chaîne » (alignée vestings / timelock) — pas seulement l’horloge PC */
     let now = latest ? Number(latest.timestamp) : Math.floor(Date.now() / 1000);
 
-    const chainId = BigInt(network.chainId);
-    const WALLETS = buildWallets(chainId);
+    const WALLETS = {
+        AIRDROP: addr("GHOST_WALLET_AIRDROP", "0x9D5DB811b409E6EcCE8B097093e719bfc5430f9a"),
+        TREASURY: addr("GHOST_WALLET_TREASURY_VESTING", "0xaB37b96A7653bE7Cb8Fb5DaCDcDda0EfC42EbcA4"),
+        TEAM: addr("GHOST_WALLET_TEAM_VESTING", "0xed7c344bAF2950Ba217CAb2279c400a830e6dD50"),
+        REWARDS: addr("GHOST_WALLET_REWARDS_TIMELOCK", "0x425F84c4adC84ce62A459610BD87A051A96c3c56"),
+        LIQUIDITY: addr("GHOST_WALLET_LIQUIDITY", "0x7926a4d86A77642Ecd0bc3fD651282187333E4a6"),
+        PRESALE_ADMIN: addr("GHOST_PRESALE_ADMIN", "0xed7c344bAF2950Ba217CAb2279c400a830e6dD50"),
+    };
 
-    if (chainId === 8453n || chainId === 84532n) {
-        if (!process.env.GHOST_PRESALE_START_UNIX?.trim() || !process.env.GHOST_PRESALE_END_UNIX?.trim()) {
-            throw new Error(
-                "GHOST_PRESALE_START_UNIX et GHOST_PRESALE_END_UNIX doivent être définis explicitement dans .env pour Base mainnet / Sepolia (évite un déploiement avec des dates implicites)."
-            );
-        }
-    }
-
+    /** Défaut 212 000 GHOST/ETH → ~0,0097 USD/GHOST si ETH ≈ 2 060 USD (indicatif hors chaîne ; le taux réel est ghostPerEth on-chain) */
     const ghostPerEthStr = process.env.GHOST_PER_ETH_GHOST?.trim() || "212000";
     const GHOST_PER_ETH = ethers.parseUnits(ghostPerEthStr, 18);
     const SOFT_CAP_ETH = ethers.parseEther(process.env.GHOST_PRESALE_SOFT_CAP_ETH ?? "0");
     const HARD_CAP_ETH = ethers.parseEther(process.env.GHOST_PRESALE_HARD_CAP_ETH ?? "10000");
+    /** 1 ETH / wallet (anti-whale) — ~212k GHOST max/adresse au taux 212k/ETH, ≪ 5 % du supply — surcharge : GHOST_PRESALE_MAX_ETH_PER_WALLET */
     const MAX_PER_WALLET = ethers.parseEther(process.env.GHOST_PRESALE_MAX_ETH_PER_WALLET ?? "1");
-    // Défauts dev (31337) : début jeudi 26 mars 2026 02:00 Europe/Paris (CET) ; fin jeudi 2 avril 2026 02:00 Paris (CEST) — 7 j calendaires, pas +604800 s (évite +1 h au passage DST).
-    let START_TIME = u64("GHOST_PRESALE_START_UNIX", 1774486800);
-    let END_TIME = u64("GHOST_PRESALE_END_UNIX", 1775088000);
     const REWARDS_LOCK_SEC = u64("GHOST_REWARDS_LOCK_SECONDS", 365 * 24 * 3600);
 
     const VESTING_TEAM_CLIFF = 6 * 30 * 24 * 3600;
@@ -170,8 +176,49 @@ async function main() {
 
     assertDeployerSeparatedFromTokenomicsWallets(deployer.address, WALLETS);
 
-    if (chainId !== 8453n && chainId !== 84532n && chainId !== 31337n) {
-        console.warn("[WARN] Réseau inattendu — confirmer si volontaire (Base = 8453, Sepolia = 84532).\n");
+    const cid = BigInt(network.chainId);
+    if (cid !== 8453n && cid !== 84532n && cid !== 31337n) {
+        console.warn("  Réseau inattendu — confirme que c’est volontaire (Base = 8453, Sepolia = 84532).\n");
+    }
+
+    const DEFAULT_PRESALE_DELAY_SEC = u64("GHOST_PRESALE_START_DELAY_SECONDS", 48 * 3600);
+    const DEFAULT_PRESALE_DURATION_SEC = u64("GHOST_PRESALE_DURATION_SECONDS", 7 * 24 * 3600);
+    const PRESALE_MIN_FUTURE_SEC = 300;
+
+    let START_TIME: number;
+    let END_TIME: number;
+    const startEnv = process.env.GHOST_PRESALE_START_UNIX?.trim();
+    const endEnv = process.env.GHOST_PRESALE_END_UNIX?.trim();
+
+    if (startEnv || endEnv) {
+        if (!startEnv || !endEnv) {
+            throw new Error(
+                "Fournis les deux GHOST_PRESALE_START_UNIX et GHOST_PRESALE_END_UNIX, ou aucun des deux pour le mode auto (délai + durée depuis l'heure chaîne)."
+            );
+        }
+        START_TIME = parseInt(startEnv, 10);
+        END_TIME = parseInt(endEnv, 10);
+        if (Number.isNaN(START_TIME) || Number.isNaN(END_TIME)) {
+            throw new Error("GHOST_PRESALE_START_UNIX / GHOST_PRESALE_END_UNIX : entiers invalides.");
+        }
+    } else if (cid === 31337n) {
+        START_TIME = now + 3600;
+        END_TIME = START_TIME + 7 * 24 * 3600;
+        console.warn("  Hardhat : pas de START/END dans .env — start = chaîne now+1h, fin = start+7j.\n");
+    } else {
+        const delay = Math.max(DEFAULT_PRESALE_DELAY_SEC, PRESALE_MIN_FUTURE_SEC);
+        START_TIME = now + delay;
+        END_TIME = START_TIME + DEFAULT_PRESALE_DURATION_SEC;
+        console.log(
+            `  Prévente — mode auto : début = heure chaîne + ${delay}s (~${(delay / 3600).toFixed(1)} h), durée ${DEFAULT_PRESALE_DURATION_SEC}s (${DEFAULT_PRESALE_DURATION_SEC / 86400} j).`
+        );
+        console.log(
+            "  Pour des dates fixes : définir GHOST_PRESALE_START_UNIX et GHOST_PRESALE_END_UNIX ; ajuster le délai/durée : GHOST_PRESALE_START_DELAY_SECONDS, GHOST_PRESALE_DURATION_SECONDS.\n"
+        );
+    }
+
+    if (END_TIME <= START_TIME) {
+        throw new Error("La fin de prévente doit être strictement après le début (GHOST_PRESALE_END_UNIX > START).");
     }
 
     const GHOST_PROTOCOL_V2 = process.env.GHOST_PROTOCOL_V2?.trim();
@@ -186,20 +233,20 @@ async function main() {
     }
     if (MAX_PER_WALLET > HARD_CAP_ETH) {
         console.warn(
-            "[WARN] maxPerWallet > hardCapEth : vérifier que la configuration est voulue.\n"
+            "  maxPerWallet > hardCapEth : le hard cap global sera atteint avant qu’une wallet puisse saturer l’anti-whale — vérifie que c’est voulu.\n"
         );
     }
 
     if (START_TIME <= now) {
-        if (chainId === 31337n) {
+        if (cid === 31337n) {
             START_TIME = now + 3600;
             END_TIME = START_TIME + 7 * 24 * 3600;
             console.warn(
-                "[WARN] Réseau Hardhat : dates prévente par défaut dépassées — start = now+1h, end = start+7j.\n"
+                "  Hardhat : début prévente encore ≤ heure chaîne — recalcul start = now+1h, end = start+7j.\n"
             );
         } else {
             throw new Error(
-                "GHOST_PRESALE_START_UNIX est dans le passé. Mets à jour GHOST_PRESALE_START_UNIX / GHOST_PRESALE_END_UNIX avant de déployer sur ce réseau."
+                "GHOST_PRESALE_START_UNIX est dans le passé par rapport à l’heure de la chaîne. Mets à jour les deux Unix dans .env, ou supprime-les pour utiliser le mode auto (délai + durée)."
             );
         }
     }
@@ -247,12 +294,14 @@ async function main() {
             ? rawBonusCredDomain
             : ethers.keccak256(ethers.toUtf8Bytes("GhostPresaleBonusRegistry.v1"));
 
+    // 1. GhostToken
     console.log("1/7 — GhostToken…");
     const token = await (await ethers.getContractFactory("GhostToken")).deploy();
     await token.waitForDeployment();
     const tokenAddr = await token.getAddress();
     console.log(`      OK ${tokenAddr}\n`);
 
+    // 2. GhostVesting Équipe
     console.log("2/7 — GhostVesting équipe…");
     const teamVesting = await (
         await ethers.getContractFactory("GhostVesting")
@@ -268,6 +317,7 @@ async function main() {
     const teamVestingAddr = await teamVesting.getAddress();
     console.log(`      OK ${teamVestingAddr}\n`);
 
+    // 3. GhostVesting Trésorerie
     console.log("3/7 — GhostVesting trésorerie…");
     const treasuryVesting = await (
         await ethers.getContractFactory("GhostVesting")
@@ -283,6 +333,7 @@ async function main() {
     const treasuryVestingAddr = await treasuryVesting.getAddress();
     console.log(`      OK ${treasuryVestingAddr}\n`);
 
+    // 4. GhostTimelock Récompenses
     console.log("4/7 — GhostTimelock récompenses…");
     const rewardsUnlock = now + REWARDS_LOCK_SEC;
     const timelock = await (
@@ -293,6 +344,7 @@ async function main() {
     console.log(`      OK ${timelockAddr}`);
     console.log(`      Déverrouillage : ${new Date(rewardsUnlock * 1000).toISOString()}\n`);
 
+    // 5. GhostEthProceedsSplitter (réception ETH au finalize — aligné tokenomics hors 15 % prévente)
     console.log("5/7 — GhostEthProceedsSplitter (ETH finalize)…");
     const splitRecipients = [
         WALLETS.AIRDROP,
@@ -309,6 +361,7 @@ async function main() {
     console.log(`      OK ${ethProceedsSplitterAddr}`);
     console.log(`      Bps (Airdrop, Trésorerie, Équipe, Récompenses, Liquidité) : ${ethSplitBps.join(", ")}\n`);
 
+    // 6. GhostPresale
     console.log("6/7 — GhostPresale…");
     const presale = await (
         await ethers.getContractFactory("GhostPresale")
@@ -341,8 +394,8 @@ async function main() {
             `Incohérence : maxGhostAllocatable (${maxGhost}) != PRIVATE_SALE_ALLOC (${privateSaleCap})`
         );
     }
-    console.log(`      OK Presale / GhostToken (${tokenAddr})`);
-    console.log(`      OK maxGhostAllocatable = PRIVATE_SALE_ALLOC = ${ethers.formatEther(maxGhost)} GHOST`);
+    console.log(`      ✓ Presale lié au même GhostToken (${tokenAddr})`);
+    console.log(`      ✓ maxGhostAllocatable = PRIVATE_SALE_ALLOC = ${ethers.formatEther(maxGhost)} GHOST`);
 
     const onChainMaxWallet = await presale.maxPerWallet();
     if (onChainMaxWallet !== MAX_PER_WALLET) {
@@ -354,11 +407,12 @@ async function main() {
     }
     const oneGhost = ethers.parseEther("1");
     const ethFor1Ghost = await presale.ethForGhost(oneGhost);
-    console.log(`      OK maxPerWallet = ${ethers.formatEther(onChainMaxWallet)} ETH`);
+    console.log(`      ✓ Anti-whale on-chain : maxPerWallet = ${ethers.formatEther(onChainMaxWallet)} ETH`);
     console.log(
-        `      OK ethForGhost(1 GHOST) = ${ethers.formatEther(ethFor1Ghost)} ETH\n`
+        `      ✓ Taux on-chain : ghostPerEth OK — ethForGhost(1 GHOST) = ${ethers.formatEther(ethFor1Ghost)} ETH\n`
     );
 
+    // 7. Registre bonus +5 % prévente (couche externe — credential + indexation)
     console.log("7/7 — GhostPresaleBonusRegistry…");
     const bonusRegistry = await (
         await ethers.getContractFactory("GhostPresaleBonusRegistry")
@@ -369,6 +423,7 @@ async function main() {
     console.log(`      bonusBps = ${BONUS_BPS} (ex. 500 = 5 % sur GHOST achetés en prévente)`);
     console.log(`      credentialDomainSeparator = ${BONUS_CRED_DOMAIN}\n`);
 
+    // Distribution — montants lus on-chain depuis GhostToken (source de vérité = contrat)
     console.log("Distribution des GHOST…");
     const transfers: [string, bigint, string][] = [
         [WALLETS.AIRDROP, await token.AIRDROP_ALLOC(), "6 600 000 → airdrop"],
@@ -411,8 +466,8 @@ async function main() {
     const leftover = await token.balanceOf(deployer.address);
     if (leftover > 0n) {
         const msg = `Reste sur déployeur : ${ethers.formatEther(leftover)} GHOST — la tokenomics n’est pas entièrement distribuée.`;
-        if (chainId === 31337n || process.env.GHOST_ALLOW_LEFTOVER_ON_DEPLOYER === "1") {
-            console.warn(`\n[WARN] ${msg}`);
+        if (cid === 31337n || process.env.GHOST_ALLOW_LEFTOVER_ON_DEPLOYER === "1") {
+            console.warn(`\n⚠️  ${msg}`);
         } else {
             throw new Error(
                 msg +

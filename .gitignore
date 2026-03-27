@@ -2,6 +2,12 @@ node_modules/
 .env
 .env.*
 !.env.example
+
+# Builds Electron / artefacts locaux (ne pas publier sur GitHub)
+dist/
+
+# Brouillon personnel
+deploiemnet tyokken manip.txt
 cache-ghost-token/
 artifacts-ghost-token/
 deployed-addresses-ghost-token.json
@@ -24,4 +30,5 @@ Thumbs.db
 # Couverture / audits locaux
 coverage/
 coverage.json
+test-results-hardhat.json
 audit/

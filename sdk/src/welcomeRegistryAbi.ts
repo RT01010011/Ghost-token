@@ -1,0 +1,15 @@
+export const GHOST_PRESALE_WELCOME_REGISTRY_ABI = [
+    "function token() view returns (address)",
+    "function presale() view returns (address)",
+    "function ghostV2() view returns (address)",
+    "function admin() view returns (address)",
+    "function welcomeAmountWei() view returns (uint256)",
+    "function maxRecipients() view returns (uint256)",
+    "function claimOpensAt() view returns (uint256)",
+    "function recordedCount() view returns (uint256)",
+    "function entries(bytes32) view returns (address payout, bool claimed)",
+    "function recordWelcomeAccount(string pseudo1, address payout)",
+    "function claim(string pseudo1)",
+    "event WelcomeRecorded(bytes32 indexed pseudo1Hash, string pseudo1, address indexed payout)",
+    "event WelcomeClaimed(bytes32 indexed pseudo1Hash, address indexed payout, uint256 amountWei)",
+] as const;

@@ -1,0 +1,20 @@
+{
+  "name": "@ghost-protocol/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript utilities for Ghost Protocol V2 and GHOST tokenomics",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
+  },
+  "peerDependencies": {
+    "ethers": "^6.0.0"
+  },
+  "devDependencies": {
+    "ethers": "^6.16.0",
+    "typescript": "^5.3.0"
+  }
+}

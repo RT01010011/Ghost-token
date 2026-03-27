@@ -22,6 +22,7 @@ Après contact initial :
 
 ## Bonnes pratiques pour les contributeurs et opérateurs
 
+- **Le fichier `.env` (secrets réels) ne doit jamais être poussé sur GitHub** : il est listé dans `.gitignore` ; seul **`.env.example`** (sans secrets) peut être versionné.
 - Ne jamais committer `.env`, clés privées, mnémoniques ni URLs RPC avec clé secrète.
 - Vérifier `git status` et l’historique avant un `push` public.
 - Sur **Base mainnet / Sepolia**, le script `deploy-ghost-ecosystem.ts` exige toutes les variables wallet et les timestamps de prévente dans `.env` (aucune adresse de production par défaut dans le code).
