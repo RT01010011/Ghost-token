@@ -50,7 +50,7 @@
     "dotenv": "^16.3.1",
     "electron": "^28.3.3",
     "electron-builder": "^25.1.8",
-    "hardhat": "^2.19.4",
+    "hardhat": "^3.2.0",
     "rcedit": "^5.0.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
